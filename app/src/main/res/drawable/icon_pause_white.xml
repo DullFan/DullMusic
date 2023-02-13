@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <path
+        android:name="triangle"
+        android:fillColor="@color/white"
+        android:pathData="M15,33
+                          L15,15
+                          Q15,11 18,12
+                          L24,16
+                          Q24,16 24,16
+                          L24,32
+                          Q24,32 24,32
+                          L18,36
+                          Q15,37 15,33
+                          M24,32
+                          L24,16
+                          Q24,16 24,16
+                          L33,22
+                          Q35,23.3 35,24
+                          L35,24
+                          Q35,24.7 33,26
+                          L24,32
+                          Q24,32 24,32
+                    " />
+</vector>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    android:orientation="vertical"
+    android:id="@+id/item_layout"
+    android:layout_marginTop="10dp"
+    android:paddingVertical="5dp"
+    android:paddingHorizontal="20dp"
+    android:foreground="?android:selectableItemBackground"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <com.example.base.customization.FocusedTextView
+        android:id="@+id/item_text01"
+        android:layout_width="match_parent"
+        android:textSize="25sp"
+        android:layout_height="wrap_content"/>
+
+    <com.example.base.customization.FocusedTextView
+        android:id="@+id/item_text02"
+        android:textSize="25sp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+</LinearLayout>

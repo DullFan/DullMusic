@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.activity.main.MainActivity">
+
+    <androidx.constraintlayout.motion.widget.MotionLayout
+        android:visibility="visible"
+        android:id="@+id/motion_layout"
+        android:layout_width="match_parent"
+        android:background="@color/background_color"
+
+        app:layoutDescription="@xml/activity_main_scene"
+        android:layout_height="match_parent">
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/content_layout"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:fillViewport="true"
+            android:scrollbars="none"
+            app:layout_constraintBottom_toTopOf="@+id/material_card_view"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <FrameLayout
+                android:id="@+id/content_fragment"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+        </androidx.core.widget.NestedScrollView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/material_card_view"
+            android:layout_width="match_parent"
+            android:layout_height="90dp"
+            app:cardBackgroundColor="@color/white"
+            app:cardElevation="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:shapeAppearanceOverlay="@style/Home_Card"
+            app:strokeWidth="0dp" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/material_card_view_swipe"
+            android:layout_width="0dp"
+            android:layout_height="90dp"
+            app:cardBackgroundColor="@color/white"
+            app:cardElevation="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@+id/material_card_play_view"
+            app:shapeAppearanceOverlay="@style/Home_Card"
+            app:strokeWidth="0dp" />
+
+        <androidx.constraintlayout.utils.widget.ImageFilterView
+            android:id="@+id/music_photos"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="10dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/default_avatar"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:round="10dp" />
+
+        <TextView
+            android:id="@+id/music_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="20dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="歌曲名称"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toTopOf="@id/music_view01"
+            app:layout_constraintLeft_toRightOf="@+id/music_photos"
+            app:layout_constraintRight_toLeftOf="@+id/material_card_play_view" />
+
+        <TextView
+            android:id="@+id/music_author"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="20dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="歌手"
+            android:textSize="12sp"
+            app:layout_constraintLeft_toRightOf="@+id/music_photos"
+            app:layout_constraintRight_toLeftOf="@+id/material_card_play_view"
+            app:layout_constraintTop_toBottomOf="@+id/music_view01" />
+
+        <com.example.base.customization.FocusedTextView
+            android:id="@+id/music_title_expand"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:alpha="0"
+            android:ellipsize="marquee"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:singleLine="true"
+            android:focusableInTouchMode="true"
+            android:paddingEnd="70dp"
+            android:text="歌曲名称歌曲名称歌曲名称歌曲名称"
+            android:textSize="25sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toTopOf="@id/music_view01"
+            app:layout_constraintLeft_toRightOf="@+id/music_photos" />
+
+        <TextView
+            android:id="@+id/music_author_expand"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:alpha="0"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:paddingEnd="70dp"
+            android:text="歌手"
+            android:textSize="16sp"
+            app:layout_constraintLeft_toRightOf="@+id/music_photos"
+            app:layout_constraintTop_toBottomOf="@+id/music_view01" />
+
+        <View
+            android:id="@+id/music_view01"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="5dp"
+            app:layout_constraintBottom_toBottomOf="@+id/music_photos"
+            app:layout_constraintTop_toTopOf="@id/music_photos" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/material_card_play_view"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginEnd="10dp"
+            app:cardBackgroundColor="@color/play_background_color"
+            app:cardCornerRadius="30dp"
+            app:layout_constraintBottom_toBottomOf="@+id/music_photos"
+            app:layout_constraintRight_toLeftOf="@+id/music_list"
+            app:layout_constraintTop_toTopOf="@id/music_photos"
+            app:strokeWidth="0dp" />
+
+        <View
+            android:id="@+id/music_view_swipe01"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:alpha="0"
+            android:background="@color/white"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/music_lyrics"
+            app:layout_constraintTop_toBottomOf="@id/music_skip_next" />
+
+        <View
+            android:id="@+id/music_view_swipe02"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:alpha="0"
+            android:background="@color/white"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/music_seekbar"
+            app:layout_constraintTop_toBottomOf="@id/music_lyrics" />
+
+        <View
+            android:id="@+id/music_view_swipe03"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:alpha="0"
+            android:background="@color/white"
+            android:visibility="gone"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/material_card_play_view"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/music_seekbar" />
+
+        <androidx.constraintlayout.utils.widget.ImageFilterView
+            android:id="@+id/music_play_pause"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+            android:tag="pause"
+            android:src="@drawable/icon_pause_anim"
+            app:layout_constraintBottom_toBottomOf="@+id/material_card_play_view"
+            app:layout_constraintLeft_toLeftOf="@+id/material_card_play_view"
+            app:layout_constraintRight_toRightOf="@+id/material_card_play_view"
+            app:layout_constraintTop_toTopOf="@+id/material_card_play_view" />
+
+        <androidx.constraintlayout.utils.widget.ImageFilterView
+            android:id="@+id/music_list"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+            android:layout_marginHorizontal="20dp"
+            android:padding="5dp"
+            android:src="@drawable/icon_play_list"
+            app:layout_constraintBottom_toBottomOf="@+id/music_photos"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="@id/music_photos"
+            app:tint="@color/icon_back_color" />
+
+        <androidx.constraintlayout.utils.widget.ImageFilterView
+            android:id="@+id/music_skip_next"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:padding="5dp"
+            android:src="@drawable/icon_skip_next"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/music_photos"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="@id/music_photos"
+            app:tint="@color/icon_back_color" />
+
+        <androidx.constraintlayout.utils.widget.ImageFilterView
+            android:id="@+id/music_skip_previous"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:padding="5dp"
+            android:src="@drawable/icon_skip_previous"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/music_photos"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="@id/music_photos"
+            app:tint="@color/icon_back_color" />
+
+        <androidx.constraintlayout.utils.widget.ImageFilterView
+            android:id="@+id/music_menu"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:layout_marginEnd="20dp"
+            android:alpha="0"
+            android:src="@drawable/icon_music_menu"
+            app:layout_constraintBottom_toBottomOf="@+id/music_author_expand"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="@id/music_title_expand"
+            app:tint="@color/icon_back_color" />
+
+        <TextView
+            android:id="@+id/music_lyrics"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:gravity="center"
+            android:text="暂无歌词"
+            android:paddingHorizontal="20dp"
+            android:textSize="18sp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/guideline05"
+            app:layout_constraintTop_toTopOf="@id/guideline04" />
+
+        <TextView
+            android:id="@+id/music_seekbar_start_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:gravity="center"
+            android:text="00:00"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/guideline06"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="@id/guideline05" />
+
+        <TextView
+            android:id="@+id/music_seekbar_end_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="20dp"
+            android:gravity="center"
+            android:text="00:00"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/guideline06"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="@id/guideline05" />
+
+
+        <androidx.appcompat.widget.AppCompatSeekBar
+            android:id="@+id/music_seekbar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/guideline06"
+            app:layout_constraintLeft_toRightOf="@+id/music_seekbar_start_time"
+            app:layout_constraintRight_toLeftOf="@+id/music_seekbar_end_time"
+            app:layout_constraintTop_toTopOf="@id/guideline05" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline_photo_start"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.08" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline_photo_end"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.52" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.54" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline_author"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.62" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline04"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.76" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline05"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.85" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline06"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.96" />
+
+    </androidx.constraintlayout.motion.widget.MotionLayout>
+
+    <FrameLayout
+        android:id="@+id/fragment"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

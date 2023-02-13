@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:ordering="sequentially">
+    <objectAnimator
+        android:duration="500"
+        android:propertyName="pathData"
+        android:valueFrom="M15,33
+                          L15,15
+                          Q15,11 18,12
+                          L24,16
+                          Q24,16 24,16
+                          L24,32
+                          Q24,32 24,32
+                          L18,36
+                          Q15,37 15,33
+                          M24,32
+                          L24,16
+                          Q24,16 24,16
+                          L33,22
+                          Q35,23.3 35,24
+                          L35,24
+                          Q35,24.7 33,26
+                          L24,32
+                          Q24,32 24,32"
+        android:valueTo=" M27,33
+                          L27,15
+                          Q27,12 30,12
+                          L30,12
+                          Q33,12 33,15
+                          L33,33
+                          Q33,36 30,36
+                          L30,36
+                          Q27,36 27,33
+                          M15,33
+                          L15,15
+                          Q15,12 18,12
+                          L18,12
+                          Q21,12 21,15
+                          L21,33
+                          Q21,36 18,36
+                          L18,36
+                          Q15,36 15,33
+                         "
+        android:valueType="pathType" />
+</set>
