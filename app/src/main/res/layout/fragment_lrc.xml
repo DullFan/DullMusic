@@ -17,6 +17,7 @@
         android:id="@+id/no_data"
         android:text="暂无歌词"
         android:textSize="25sp"
+        android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="center"/>

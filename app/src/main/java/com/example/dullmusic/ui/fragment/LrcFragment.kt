@@ -28,7 +28,7 @@ class LrcFragment : BaseFragment() {
     private val mMainActivity by lazy {
         (activity as MainActivity)
     }
-    var currentIndex = 0
+    var currentLrcIndex = 0
 
     lateinit var baseRvAdapter: BaseRvAdapter<LrcBean>
     lateinit var linearLayoutManager:LinearLayoutManager
@@ -39,14 +39,13 @@ class LrcFragment : BaseFragment() {
         savedInstanceState: Bundle?
     ): View {
         linearLayoutManager = LinearLayoutManager(requireContext())
-
         mMainActivity.setMainLrcHandlerF(object :MainActivity.MainLrcHandler{
             override fun onMainHandlerListener() {
                 val currentPosition = mMainActivity.audioBinder.getCurrentPosition()
                 if (::baseRvAdapter.isInitialized) {
                     mMainActivity.lrcBeanList.forEachIndexed { index, lrcBean ->
                         if (currentPosition >= lrcBean.start && index != baseRvAdapter.index) {
-                            currentIndex = index
+                            currentLrcIndex = index
                             baseRvAdapter.index = index
                             if(binding.rv.scrollState == SCROLL_STATE_IDLE){
                                 linearLayoutManager.scrollToPositionWithOffset(index,100.px.toInt())
@@ -59,13 +58,7 @@ class LrcFragment : BaseFragment() {
         mMainActivity.setMainLrcEndOfSongF(object :MainActivity.MainLrcEndOfSong{
             override fun onEndOfSongPlayListener() {
                 baseRvAdapter.dataList = mMainActivity.lrcBeanList
-                if(mMainActivity.lrcBeanList.size == 0){
-                    binding.rv.visibility = View.GONE
-                    binding.noData.visibility = View.VISIBLE
-                }else{
-                    binding.rv.visibility = View.VISIBLE
-                    binding.noData.visibility = View.GONE
-                }
+                judgmentHide()
             }
         })
 
@@ -112,10 +105,20 @@ class LrcFragment : BaseFragment() {
                 itemLrcRvLayoutBinding.itemText02.setTextColor(resources.getColor(R.color.text_grey))
             }
         }
-        baseRvAdapter.index = currentIndex
+        baseRvAdapter.index = currentLrcIndex
         binding.rv.adapter = baseRvAdapter
-
-
+        judgmentHide()
         return binding.root
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun judgmentHide() {
+        if (mMainActivity.lrcBeanList.size == 0) {
+            binding.rv.visibility = View.GONE
+            binding.noData.visibility = View.VISIBLE
+        } else {
+            binding.rv.visibility = View.VISIBLE
+            binding.noData.visibility = View.GONE
+        }
     }
 }

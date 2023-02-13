@@ -22,4 +22,12 @@
 # 反馈
 点击链接加入群聊【DullMusic】[147548357](https://jq.qq.com/?_wv=1027&k=QQgM70mV)
 
+# 截图
+
+| <img src="./screenshots/1.png" /> | <img src="./screenshots/2.png" />  | <img src="./screenshots/3.png"  /> |
+|:---------------------------------:|:----------------------------------:|:----------------------------------:|
+| <img src="./screenshots/4.png" /> | <img src="./screenshots/5.png"  /> | <img src="./screenshots/7.png"  /> |
+
+<img src="./screenshots/6.png"/> 
+
 # 更新列表
