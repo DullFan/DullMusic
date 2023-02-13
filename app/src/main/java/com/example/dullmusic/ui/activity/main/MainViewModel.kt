@@ -13,9 +13,29 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 
 class MainViewModel(private val application: Application) : AndroidViewModel(application) {
+    /**
+     * 媒体库
+     */
     var musicSongList = MutableLiveData<MutableList<Song>>()
+
+    /**
+     * 播放列表
+     */
+    var musicPlaySongList = MutableLiveData<MutableList<Song>>()
+
+    /**
+     * 当前选中的歌曲
+     */
     var selectSongBean = MutableLiveData<SelectSongBean>()
+
+    /**
+     * 当前选中的Bitmap
+     */
     var selectBitmap = MutableLiveData<Bitmap>()
+    /**
+     * 是否开启其他Fragment
+     */
+    var isOtherPages = MutableLiveData(false)
 
     /**
      * 请求媒体库数据
@@ -25,7 +45,7 @@ class MainViewModel(private val application: Application) : AndroidViewModel(app
         isRefresh: Boolean = false,
         action: (dataList: MutableList<Song>) -> Unit = {}
     ) {
-        //判断数据库是否存在数据，如果不存在则查询本地媒体库
+        //判断数据库是否存在数据，如果不存在则查询本地
         if (musicData.isEmpty() || isRefresh) {
             val cursor = application.contentResolver.query(
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,

@@ -104,7 +104,7 @@ suspend fun getAlbumPicture(path: String): Bitmap? {
         BitmapFactory.decodeByteArray(data, 0, data.size, options)
         val originalWidth = options.outWidth
         val originalHeight = options.outHeight
-        options.inSampleSize = getSimpleSize(originalWidth, originalHeight, 50, 50)
+        options.inSampleSize = getSimpleSize(originalWidth, originalHeight, 30, 30)
         /*
           inJustDecodeBounds设置为false, 真正的去加载Bitmap
          */
@@ -347,13 +347,13 @@ fun startTextLrcAnimator(view: View, action: () -> Unit = {}) {
 /**
  * 透明度进入
  */
-fun startAlphaEnterAnimator(view: View) {
+fun startAlphaEnterAnimator(view: View,duration:Long = 300) {
     val animator = ObjectAnimator.ofFloat(
         view,
         "alpha",
         0.5f,
         1f
-    ).setDuration(300)
+    ).setDuration(duration)
     animator.interpolator = LinearInterpolator()
     animator.start()
 }
@@ -361,13 +361,13 @@ fun startAlphaEnterAnimator(view: View) {
 /**
  * 透明度退出
  */
-fun startAlphaOutAnimator(view: View) {
+fun startAlphaOutAnimator(view: View,duration:Long = 300) {
     val animator = ObjectAnimator.ofFloat(
         view,
         "alpha",
         1f,
         0.5f
-    ).setDuration(300)
+    ).setDuration(duration)
     animator.interpolator = LinearInterpolator()
     animator.start()
 }

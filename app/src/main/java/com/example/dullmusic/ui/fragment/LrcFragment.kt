@@ -1,15 +1,14 @@
 package com.example.dullmusic.ui.fragment
 
-import android.graphics.Color
 import android.os.*
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE
-import androidx.recyclerview.widget.RecyclerView.VIEW_LOG_TAG
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.example.base.base.BaseFragment
 import com.example.base.base.BaseRvAdapter
@@ -28,10 +27,10 @@ class LrcFragment : BaseFragment() {
     private val mMainActivity by lazy {
         (activity as MainActivity)
     }
-    var currentLrcIndex = 0
 
     lateinit var baseRvAdapter: BaseRvAdapter<LrcBean>
     lateinit var linearLayoutManager:LinearLayoutManager
+    var whetherToScroll = false
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreateView(
@@ -45,9 +44,9 @@ class LrcFragment : BaseFragment() {
                 if (::baseRvAdapter.isInitialized) {
                     mMainActivity.lrcBeanList.forEachIndexed { index, lrcBean ->
                         if (currentPosition >= lrcBean.start && index != baseRvAdapter.index) {
-                            currentLrcIndex = index
+                            mMainActivity.currentLrcIndex = index
                             baseRvAdapter.index = index
-                            if(binding.rv.scrollState == SCROLL_STATE_IDLE){
+                            if(whetherToScroll){
                                 linearLayoutManager.scrollToPositionWithOffset(index,100.px.toInt())
                             }
                         }
@@ -61,7 +60,6 @@ class LrcFragment : BaseFragment() {
                 judgmentHide()
             }
         })
-
         binding.rv.layoutManager = linearLayoutManager
         (binding.rv.itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
         baseRvAdapter = BaseRvAdapter(
@@ -105,9 +103,16 @@ class LrcFragment : BaseFragment() {
                 itemLrcRvLayoutBinding.itemText02.setTextColor(resources.getColor(R.color.text_grey))
             }
         }
-        baseRvAdapter.index = currentLrcIndex
+        baseRvAdapter.index = mMainActivity.currentLrcIndex
+        linearLayoutManager.scrollToPositionWithOffset(mMainActivity.currentLrcIndex,100.px.toInt())
         binding.rv.adapter = baseRvAdapter
-        judgmentHide()
+
+        binding.rv.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                whetherToScroll = SCROLL_STATE_IDLE == newState
+            }
+        })
         return binding.root
     }
 

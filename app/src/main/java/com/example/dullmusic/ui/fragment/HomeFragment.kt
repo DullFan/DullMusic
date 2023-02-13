@@ -1,27 +1,24 @@
 package com.example.dullmusic.ui.fragment
 
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.AnimationUtils
 import androidx.annotation.RequiresApi
-import androidx.appcompat.content.res.AppCompatResources
-import androidx.core.graphics.drawable.toBitmap
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.example.base.base.BaseFragment
 import com.example.base.base.BaseRvAdapter
 import com.example.base.utils.*
 import com.example.dullmusic.R
 import com.example.dullmusic.R.color
+import com.example.dullmusic.bean.IconTextBean
 import com.example.dullmusic.bean.SelectSongBean
 import com.example.dullmusic.databinding.FragmentHomeBinding
 import com.example.dullmusic.databinding.ItemSongLayoutBinding
 import com.example.dullmusic.bean.Song
+import com.example.dullmusic.databinding.ItemHomeEntryLayoutBinding
 import com.example.dullmusic.ui.activity.main.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,23 +40,61 @@ class HomeFragment : BaseFragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
-        binding.contentMediaCard.setOnClickListener(myOnMultiClickListener {
-            mMainActivity.startMediaLibraryFragment()
-        })
-        binding.contentPlayListCard.setOnClickListener(myOnMultiClickListener {
-            mMainActivity.startSongListFragment()
-        })
-        //取消过渡动画
+        initEntryRv()
+        initMediaRv()
+        return binding.root
+    }
+
+    /**
+     * 设置入口
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun initEntryRv() {
+        val mutableListOf = mutableListOf<IconTextBean>()
+        mutableListOf += IconTextBean(R.drawable.icon_play_list, "歌单")
+        mutableListOf += IconTextBean(R.drawable.icon_music_library, "专辑")
+        mutableListOf += IconTextBean(R.drawable.people_black_24dp, "艺术家")
+        binding.contentEntryRv.adapter = BaseRvAdapter(
+            mutableListOf,
+            R.layout.item_home_entry_layout
+        ) { itemData, view, position ->
+            val itemHomeEntryLayoutBinding = ItemHomeEntryLayoutBinding.bind(view)
+            itemHomeEntryLayoutBinding.itemHomeEntryIcon.setImageResource(itemData.icon)
+            itemHomeEntryLayoutBinding.itemHomeEntryText.text = itemData.text
+            itemHomeEntryLayoutBinding.itemHomeEntryCard.setOnClickListener(myOnMultiClickListener {
+                when (position) {
+                    0 -> mMainActivity.startPLayListFragment()
+                    1 -> mMainActivity.startTheAlbumFragment()
+                    2 -> mMainActivity.startArtistFragment()
+                }
+            })
+        }
+        mMainActivity.mainViewModel.isOtherPages.observe(this){
+            if(!it){
+                binding.contentRv.visibility = View.VISIBLE
+            }else{
+                binding.contentRv.visibility = View.GONE
+            }
+        }
+    }
+
+    /**
+     * 初始化媒体库
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun initMediaRv() {
+        // 取消过渡动画
         (binding.contentRv.itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
         binding.contentRv.itemAnimator = null
         mMainActivity.mainViewModel.musicSongList.observe(this) { songList ->
+            binding.mediaText.text = "${songList.size} 首歌曲"
             val songBaseRvAdapter =
                 BaseRvAdapter(songList, R.layout.item_song_layout) { itemData, view, position ->
                     val itemSongLayoutBinding = ItemSongLayoutBinding.bind(view)
                     itemSongLayoutBinding.musicTitle.text = itemData.name
                     itemSongLayoutBinding.musicAuthor.text = itemData.artist
                     //设置Bitmap
-                    setImageBitmap(itemData, itemSongLayoutBinding, position, songList)
+                    setImageBitmap(itemData, itemSongLayoutBinding, position)
                     if (index == position) {
                         val typedValue = TypedValue()
                         requireContext().theme.resolveAttribute(
@@ -108,7 +143,6 @@ class HomeFragment : BaseFragment() {
                 }
             }
         }
-        return binding.root
     }
 
     /**
@@ -118,8 +152,7 @@ class HomeFragment : BaseFragment() {
     private fun BaseRvAdapter<Song>.setImageBitmap(
         itemData: Song,
         itemSongLayoutBinding: ItemSongLayoutBinding,
-        position: Int,
-        songList: MutableList<Song>
+        position: Int
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             flow {
@@ -136,9 +169,9 @@ class HomeFragment : BaseFragment() {
         }
 
         if (index == position) {
-            mMainActivity.sharedPreferencesEdit.putInt("selectSongPosition",position)
+            mMainActivity.sharedPreferencesEdit.putInt("selectSongPosition", position)
             mMainActivity.sharedPreferencesEdit.commit()
-            selectedEvents(position, songList, itemData)
+            selectedEvents(position, itemData)
         }
     }
 
@@ -147,10 +180,9 @@ class HomeFragment : BaseFragment() {
      */
     @RequiresApi(Build.VERSION_CODES.O)
     private fun BaseRvAdapter<Song>.selectedEvents(
-        position: Int, songList: MutableList<Song>, itemData: Song
+        position: Int, itemData: Song
     ) {
         if (index == position) {
-            binding.contentText.text = "正在播放 (${(position + 1)} / ${songList.size})"
             mMainActivity.mainViewModel.setSelectSong(
                 SelectSongBean(
                     itemData, position

@@ -1,9 +1,13 @@
 package com.example.dullmusic.ui.activity.main
 
 import android.Manifest
+import android.app.AlertDialog
 import android.content.*
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.drawable.Animatable
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
@@ -13,6 +17,8 @@ import android.widget.SeekBar
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.constraintlayout.motion.widget.MotionLayout
+import androidx.core.content.ContextCompat
+import androidx.core.content.PackageManagerCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.ViewModelProvider
@@ -22,17 +28,16 @@ import com.example.dullmusic.R
 import com.example.dullmusic.bean.GsonSongBean
 import com.example.dullmusic.bean.SelectSongBean
 import com.example.dullmusic.databinding.ActivityMainBinding
+import com.example.dullmusic.databinding.DialogPermissionsLayoutBinding
 import com.example.dullmusic.lrc.LrcBean
 import com.example.dullmusic.lrc.parseLrcFile
 import com.example.dullmusic.lrc.parseStr2List
 import com.example.dullmusic.ui.activity.SettingActivity
-import com.example.dullmusic.ui.fragment.HomeFragment
-import com.example.dullmusic.ui.fragment.LrcFragment
-import com.example.dullmusic.ui.fragment.MediaLibraryFragment
-import com.example.dullmusic.ui.fragment.SongListFragment
+import com.example.dullmusic.ui.fragment.*
 import com.example.media.ExoPlayerManager
 import com.example.media.ExoPlayerService
 import com.google.android.exoplayer2.MediaItem
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.*
 
 
@@ -55,11 +60,6 @@ open class MainActivity : BaseActivity() {
     private var motionLayoutIsExpand = false
 
     /**
-     * 是否开启其他Fragment
-     */
-    private var isOtherPages = false
-
-    /**
      * 是否手动点击切换音乐，防止二次调用audioBinder.seekIndex(it.selectPosition)
      */
     var isClickOnTheNextSong = true
@@ -76,6 +76,7 @@ open class MainActivity : BaseActivity() {
         sharedPreferences.edit()
     }
 
+    lateinit var permissionsDialog: AlertDialog
 
     /**
      * 权限申请
@@ -83,22 +84,44 @@ open class MainActivity : BaseActivity() {
     val registerForActivityResult =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
             if (it[Manifest.permission.READ_EXTERNAL_STORAGE]!! && it[Manifest.permission.WRITE_EXTERNAL_STORAGE]!!) {
-                CoroutineScope(Dispatchers.IO).launch {
-                    mainViewModel.requestMusicSong(
-                        sharedPreferences.getString(
-                            "musicListString", ""
-                        ) ?: ""
-                    ) { musicList ->
-                        sharedPreferencesEdit.putString(
-                            "musicListString", gson.toJson(GsonSongBean(musicList))
-                        )
-                        sharedPreferencesEdit.commit()
-                    }
-                }
-            } else {
-                showToast(this, "请同意权限,要不然无法运行程序")
+                requestData()
             }
         }
+
+    private fun requestData() {
+        CoroutineScope(Dispatchers.IO).launch {
+            showLog(
+                sharedPreferences.getString(
+                    "musicListString", ""
+                ) ?: ""
+            )
+            mainViewModel.requestMusicSong(
+                sharedPreferences.getString(
+                    "musicListString", ""
+                ) ?: ""
+            ) { musicList ->
+                sharedPreferencesEdit.putString(
+                    "musicListString", gson.toJson(GsonSongBean(musicList))
+                )
+                sharedPreferencesEdit.commit()
+            }
+            MainScope().launch {
+                if (::permissionsDialog.isInitialized) {
+                    permissionsDialog.dismiss()
+                }
+                bindExoPlayerService()
+            }
+        }
+    }
+
+    /**
+     * 播放列表
+     */
+    private fun clickBottomSheetDialog() {
+        val bottomSheetDialog = BottomSheetDialog(this)
+
+
+    }
 
     private val permissions = arrayOf(
         Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE
@@ -116,7 +139,7 @@ open class MainActivity : BaseActivity() {
                 binding.musicSeekbar.progress = audioBinder.getCurrentPosition().toInt()
                 binding.musicSeekbarStartTime.text = convertComponentSeconds(currentPosition)
                 lrcSet(currentPosition)
-                if(::mainLrcHandler.isInitialized && binding.fragment.visibility == View.VISIBLE){
+                if (::mainLrcHandler.isInitialized && binding.fragment.visibility == View.VISIBLE) {
                     mainLrcHandler.onMainHandlerListener()
                 }
             }
@@ -137,11 +160,13 @@ open class MainActivity : BaseActivity() {
     interface MainLrcHandler {
         fun onMainHandlerListener()
     }
+
     lateinit var mainLrcEndOfSong: MainLrcEndOfSong
     lateinit var mainLrcHandler: MainLrcHandler
     fun setMainLrcHandlerF(_action: MainLrcHandler) {
         mainLrcHandler = _action
     }
+
     fun setMainLrcEndOfSongF(_action: MainLrcEndOfSong) {
         mainLrcEndOfSong = _action
     }
@@ -153,7 +178,6 @@ open class MainActivity : BaseActivity() {
                 val i = currentPosition + 400
                 if (i >= it.start && i <= it.end && binding.musicLyrics.text != it.lrc) {
                     startTextLrcAnimator(binding.musicLyrics) {
-
                         binding.musicLyrics.text = it.lrc
                     }
                 }
@@ -164,6 +188,8 @@ open class MainActivity : BaseActivity() {
     val audioManager by lazy {
         getSystemService(Context.AUDIO_SERVICE) as AudioManager
     }
+
+    var currentLrcIndex = 0
 
     var lrcBeanList: MutableList<LrcBean> = mutableListOf()
 
@@ -193,12 +219,7 @@ open class MainActivity : BaseActivity() {
         setContentView(binding.root)
         window.statusBarColor = Color.TRANSPARENT
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        startHomeFragment()
-        bindExoPlayerService()
-        requestData()
-        basicConfiguration()
-        startSetting()
-        motionLayoutListener()
+        requestPermission()
     }
 
     /**
@@ -213,7 +234,9 @@ open class MainActivity : BaseActivity() {
             it.forEach {
                 mediaItems += MediaItem.fromUri(it.data)
             }
-            audioBinder.setMediaItems(mediaItems)
+            if(::audioBinder.isInitialized){
+                audioBinder.setMediaItems(mediaItems)
+            }
         }
 
         /**
@@ -243,7 +266,7 @@ open class MainActivity : BaseActivity() {
                 }
 
                 MainScope().launch {
-                    if(::mainLrcEndOfSong.isInitialized && binding.fragment.visibility == View.VISIBLE){
+                    if (::mainLrcEndOfSong.isInitialized && binding.fragment.visibility == View.VISIBLE) {
                         mainLrcEndOfSong.onEndOfSongPlayListener()
                     }
                 }
@@ -326,9 +349,9 @@ open class MainActivity : BaseActivity() {
     /**
      * 在Fragment中启动音乐
      */
-    fun playMusic(){
+    fun playMusic() {
         binding.musicPlayPause.tag = "play"
-        binding.musicPlayPause.setImageResource(R.drawable.icon_pause_anim)
+        binding.musicPlayPause.setImageResource(R.drawable.icon_play)
         audioBinder.playerMedia()
         progressHandler.sendEmptyMessageDelayed(1, 500)
     }
@@ -407,6 +430,11 @@ open class MainActivity : BaseActivity() {
             override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
                 if (p1 != null) {
                     audioBinder = p1 as ExoPlayerService.AudioBinder
+                    startHomeFragment()
+                    startSetting()
+                    motionLayoutListener()
+                    clickBottomSheetDialog()
+                    basicConfiguration()
                 }
             }
 
@@ -420,8 +448,25 @@ open class MainActivity : BaseActivity() {
     /**
      * 获取数据
      */
-    private fun requestData() {
-        registerForActivityResult.launch(permissions)
+    private fun requestPermission() {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                permissions[0]
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            permissionsDialog = AlertDialog.Builder(this).create()
+            val dialogView = DialogPermissionsLayoutBinding.inflate(layoutInflater)
+            permissionsDialog.setCancelable(false)
+            permissionsDialog.setView(dialogView.root)
+            permissionsDialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            permissionsDialog.window!!.decorView.setBackgroundColor(Color.TRANSPARENT)
+            permissionsDialog.show()
+            dialogView.dialogButton.setOnClickListener(myOnMultiClickListener {
+                registerForActivityResult.launch(permissions)
+            })
+        } else {
+            requestData()
+        }
     }
 
     /**
@@ -429,7 +474,6 @@ open class MainActivity : BaseActivity() {
      */
     private fun startHomeFragment() {
         replaceFragment(binding.contentFragment.id, HomeFragment())
-        isOtherPages = true
     }
 
     /**
@@ -437,23 +481,27 @@ open class MainActivity : BaseActivity() {
      */
     private fun startLrcFragment() {
         replaceFragment(binding.fragment.id, LrcFragment())
-        isOtherPages = true
     }
 
     /**
      * 跳转媒体库
      */
-    public fun startMediaLibraryFragment() {
-        replaceFragment(binding.contentFragment.id, MediaLibraryFragment())
-        isOtherPages = true
+    public fun startPLayListFragment() {
+        addFragment(binding.contentFragment.id, PlayListFragment())
+    }
+
+    /**
+     * 跳转媒体库
+     */
+    public fun startArtistFragment() {
+        addFragment(binding.contentFragment.id, ArtistFragment())
     }
 
     /**
      * 跳转歌单
      */
-    public fun startSongListFragment() {
-        replaceFragment(binding.contentFragment.id, SongListFragment())
-        isOtherPages = true
+    public fun startTheAlbumFragment() {
+        addFragment(binding.contentFragment.id, TheAlbumFragment())
     }
 
     /**
@@ -504,9 +552,9 @@ open class MainActivity : BaseActivity() {
         } else if (motionLayoutIsExpand) {
             motionLayoutIsExpand = false
             binding.motionLayout.transitionToStart()
-        } else if (isOtherPages) {
-            startHomeFragment()
-            isOtherPages = false
+        } else if (mainViewModel.isOtherPages.value == true) {
+            supportFragmentManager.popBackStack()
+            mainViewModel.isOtherPages.value = false
         } else {
             val currentTimeMillis = System.currentTimeMillis()
             if (currentTimeMillis - lastOutLayoutTime >= MIN_OUT_LAYOUT_TIME) {

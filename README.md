@@ -1,8 +1,9 @@
 # 音乐
+
 一个听音乐的Android应用
 
-
 # 未来展望
+
 - [x] 主体框架
 - [x] 歌词
 - [ ] 浏览歌单、专辑、艺术家
@@ -20,6 +21,7 @@
 - [ ] 性能优化
 
 # 反馈
+
 点击链接加入群聊【DullMusic】[147548357](https://jq.qq.com/?_wv=1027&k=QQgM70mV)
 
 # 截图
@@ -29,6 +31,7 @@
 | <img src="./screenshots/4.jpg" /> | <img src="./screenshots/5.jpg"  /> | <img src="./screenshots/7.jpg"  /> |
 
 # 更新列表
-- 2023/02/13 1.0.0  
+
+- 2023/02/12  
   完成大体  
   新增歌词  

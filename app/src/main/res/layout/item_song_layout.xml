@@ -45,6 +45,14 @@
             app:layout_constraintLeft_toRightOf="@+id/music_photos"
             app:layout_constraintTop_toBottomOf="@+id/music_view01" />
 
+        <androidx.constraintlayout.utils.widget.ImageFilterView
+            android:src="@drawable/icon_music_menu"
+            android:layout_width="20dp"
+            app:layout_constraintTop_toTopOf="@id/music_view01"
+            app:layout_constraintBottom_toBottomOf="@id/music_view01"
+            app:layout_constraintRight_toRightOf="parent"
+            android:layout_height="30dp"/>
+
         <View
             android:id="@+id/music_view01"
             android:layout_width="match_parent"
