@@ -132,63 +132,65 @@ open class MainActivity : BaseActivity() {
      */
     private fun clickBottomSheetDialog() {
         binding.musicList.setOnClickListener(myOnMultiClickListener {
-            val dialogPlayListLayoutBinding = DialogPlayListLayoutBinding.inflate(layoutInflater)
-            bottomSheetDialog.setContentView(dialogPlayListLayoutBinding.root)
-            dialogPlayListLayoutBinding.close.setOnClickListener(myOnMultiClickListener {
-                bottomSheetDialog.hide()
-            })
-            val linearLayoutManager = LinearLayoutManager(this)
-            dialogPlayListLayoutBinding.dialogPlayListRv.layoutManager = linearLayoutManager
-            val songMutableList = mainViewModel.musicPlaySongList.value
-            val dialogBottomSheetRvAdapter = BaseRvAdapterPosition(
-                songMutableList!!.toList(), R.layout.item_play_list_layout
-            ) { itemData, view, position, holderPosition ->
-                val itemPlayListLayoutBinding = ItemPlayListLayoutBinding.bind(view)
-                itemPlayListLayoutBinding.title.text = itemData.name
-                itemPlayListLayoutBinding.name.text = itemData.artist
+            if(mainViewModel.musicPlaySongList.value?.size != 0){
+                val dialogPlayListLayoutBinding = DialogPlayListLayoutBinding.inflate(layoutInflater)
+                bottomSheetDialog.setContentView(dialogPlayListLayoutBinding.root)
+                dialogPlayListLayoutBinding.close.setOnClickListener(myOnMultiClickListener {
+                    bottomSheetDialog.hide()
+                })
+                val linearLayoutManager = LinearLayoutManager(this)
+                dialogPlayListLayoutBinding.dialogPlayListRv.layoutManager = linearLayoutManager
+                val songMutableList = mainViewModel.musicPlaySongList.value
+                val dialogBottomSheetRvAdapter = BaseRvAdapterPosition(
+                    songMutableList!!.toList(), R.layout.item_play_list_layout
+                ) { itemData, view, position, holderPosition ->
+                    val itemPlayListLayoutBinding = ItemPlayListLayoutBinding.bind(view)
+                    itemPlayListLayoutBinding.title.text = itemData.name
+                    itemPlayListLayoutBinding.name.text = itemData.artist
 
-                if (index == position) {
-                    sharedPreferencesEdit.putString("selectSongPath", itemData.data)
-                    sharedPreferencesEdit.commit()
-                    itemPlayListLayoutBinding.itemClose.visibility = View.GONE
-                    itemPlayListLayoutBinding.title.setTextColor(resources.getColor(R.color.purple_200))
-                    itemPlayListLayoutBinding.name.setTextColor(resources.getColor(R.color.purple_200))
-                } else {
-                    itemPlayListLayoutBinding.itemClose.visibility = View.VISIBLE
-                    itemPlayListLayoutBinding.title.setTextColor(resources.getColor(R.color.black))
-                    itemPlayListLayoutBinding.name.setTextColor(resources.getColor(R.color.text_grey))
+                    if (index == position) {
+                        sharedPreferencesEdit.putString("selectSongPath", itemData.data)
+                        sharedPreferencesEdit.commit()
+                        itemPlayListLayoutBinding.itemClose.visibility = View.GONE
+                        itemPlayListLayoutBinding.title.setTextColor(resources.getColor(R.color.purple_200))
+                        itemPlayListLayoutBinding.name.setTextColor(resources.getColor(R.color.purple_200))
+                    } else {
+                        itemPlayListLayoutBinding.itemClose.visibility = View.VISIBLE
+                        itemPlayListLayoutBinding.title.setTextColor(resources.getColor(R.color.black))
+                        itemPlayListLayoutBinding.name.setTextColor(resources.getColor(R.color.text_grey))
+                    }
+
+                    itemPlayListLayoutBinding.root.setOnClickListener(myOnMultiClickListener {
+                        if (index != position) {
+                            isClickOnTheNextSong = true
+                            if (!isNotFirstEntry) isNotFirstEntry = true
+                            index = position
+                            playListDialog.onPlayListener(itemData.data)
+                        }
+                    })
+                    itemPlayListLayoutBinding.itemClose.setOnClickListener(myOnMultiClickListener {
+                        val selectIndexMusicPlay = selectIndexMusicPlay(itemData.data)
+                        val value = mainViewModel.musicPlaySongList.value
+                        value!!.removeAt(selectIndexMusicPlay)
+
+                        sharedPreferencesEdit.putString(
+                            "SongPlayListString", gson.toJson(GsonSongBean(value))
+                        )
+                        sharedPreferencesEdit.commit()
+                        audioBinder.removeMediaItem(selectIndexMusicPlay)
+                        if (position < index) {
+                            index -= 1
+                        }
+                        dataList = value
+                    })
                 }
-
-                itemPlayListLayoutBinding.root.setOnClickListener(myOnMultiClickListener {
-                    if (index != position) {
-                        isClickOnTheNextSong = true
-                        if (!isNotFirstEntry) isNotFirstEntry = true
-                        index = position
-                        playListDialog.onPlayListener(itemData.data)
-                    }
-                })
-                itemPlayListLayoutBinding.itemClose.setOnClickListener(myOnMultiClickListener {
-                    val selectIndexMusicPlay = selectIndexMusicPlay(itemData.data)
-                    val value = mainViewModel.musicPlaySongList.value
-                    value!!.removeAt(selectIndexMusicPlay)
-
-                    sharedPreferencesEdit.putString(
-                        "SongPlayListString", gson.toJson(GsonSongBean(value))
-                    )
-                    sharedPreferencesEdit.commit()
-                    audioBinder.removeMediaItem(selectIndexMusicPlay)
-                    if (position < index) {
-                        index -= 1
-                    }
-                    dataList = value
-                })
+                dialogPlayListLayoutBinding.dialogPlayListRv.adapter = dialogBottomSheetRvAdapter
+                val selectSongPath = sharedPreferences.getString("selectSongPath", "")
+                val selectIndex = selectIndexMusicPlay(selectSongPath)
+                linearLayoutManager.scrollToPositionWithOffset(selectIndex, 100.px.toInt())
+                dialogBottomSheetRvAdapter.index = selectIndex
+                bottomSheetDialog.show()
             }
-            dialogPlayListLayoutBinding.dialogPlayListRv.adapter = dialogBottomSheetRvAdapter
-            val selectSongPath = sharedPreferences.getString("selectSongPath", "")
-            val selectIndex = selectIndexMusicPlay(selectSongPath)
-            linearLayoutManager.scrollToPositionWithOffset(selectIndex, 100.px.toInt())
-            dialogBottomSheetRvAdapter.index = selectIndex
-            bottomSheetDialog.show()
         })
     }
 

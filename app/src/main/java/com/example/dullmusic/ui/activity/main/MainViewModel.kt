@@ -95,7 +95,9 @@ class MainViewModel(private val application: Application) : AndroidViewModel(app
                 }
                 withContext(Dispatchers.Main) {
                     _musicSongList.reverse()
+                    musicPlaySongList.value = _musicSongList
                     musicSongList.value = _musicSongList
+
                     action.invoke(_musicSongList)
                 }
                 cursor.close()

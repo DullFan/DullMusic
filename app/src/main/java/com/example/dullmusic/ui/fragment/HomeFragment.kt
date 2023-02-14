@@ -107,6 +107,7 @@ class HomeFragment : BaseFragment() {
         (binding.contentRv.itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
         binding.contentRv.itemAnimator = null
         mMainActivity.mainViewModel.musicSongList.observe(this) { songList ->
+            showLog("媒体库的数据发生了变化")
             binding.mediaText.text = "${songList.size} 首歌曲"
             songBaseRvAdapter =
                 BaseRvAdapter(songList, R.layout.item_song_layout) { itemData, view, position ->
@@ -209,6 +210,7 @@ class HomeFragment : BaseFragment() {
     private fun BaseRvAdapter<Song>.setImageBitmap(
         itemData: Song, itemSongLayoutBinding: ItemSongLayoutBinding, position: Int
     ) {
+        // 这里逻辑有点问题
         CoroutineScope(Dispatchers.IO).launch {
             flow {
                 val bitmap = getAlbumPicture(itemData.data)
