@@ -18,7 +18,7 @@ import com.google.gson.Gson
 import java.io.File
 import java.util.regex.Pattern
 
-const val MIN_CLICK_DELAY_TIME = 200
+const val MIN_CLICK_DELAY_TIME = 250
 var lastClickTime = 0L
 val gson by lazy {
     Gson()

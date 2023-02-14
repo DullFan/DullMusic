@@ -5,6 +5,7 @@
     android:layout_marginTop="10dp"
     android:paddingVertical="5dp"
     android:paddingHorizontal="20dp"
+    android:gravity="center"
     android:foreground="?android:selectableItemBackground"
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"

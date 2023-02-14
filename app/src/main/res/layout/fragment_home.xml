@@ -49,7 +49,7 @@
         android:textColor="@color/black"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@id/content_entry_rv"
-        android:textSize="16sp"
+        android:textSize="17sp"
         android:textStyle="bold" />
 
 
@@ -67,9 +67,8 @@
 
     <androidx.constraintlayout.utils.widget.ImageFilterView
         android:id="@+id/content_multiple_choice"
-        android:layout_width="23dp"
-        android:layout_height="23dp"
-        android:layout_marginEnd="10dp"
+        android:layout_width="21dp"
+        android:layout_height="21dp"
         android:src="@drawable/icon_music_multiple_choice"
         app:layout_constraintBottom_toBottomOf="@+id/media_text"
         app:layout_constraintRight_toLeftOf="@+id/content_play"
@@ -79,8 +78,8 @@
 
     <androidx.constraintlayout.utils.widget.ImageFilterView
         android:id="@+id/content_sort"
-        android:layout_width="23dp"
-        android:layout_height="23dp"
+        android:layout_width="21dp"
+        android:layout_height="21dp"
         android:layout_marginEnd="10dp"
         android:src="@drawable/icon_music_sort"
         app:layout_constraintBottom_toBottomOf="@+id/media_text"
@@ -123,7 +122,6 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:paddingBottom="40dp"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         app:layout_constraintTop_toBottomOf="@+id/media_text" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

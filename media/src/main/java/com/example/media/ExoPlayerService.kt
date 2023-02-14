@@ -68,6 +68,9 @@ class ExoPlayerService : MediaBrowserServiceCompat() {
         fun getCurrentPosition(): Long {
             return exoPlayerManager.getCurrentPosition()
         }
+        fun getCurrentMediaItemIndex(): Int {
+            return exoPlayerManager.getCurrentMediaItemIndex()
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder {

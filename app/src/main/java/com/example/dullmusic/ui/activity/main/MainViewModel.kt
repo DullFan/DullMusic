@@ -9,8 +9,8 @@ import com.example.base.utils.gson
 import com.example.dullmusic.bean.GsonSongBean
 import com.example.dullmusic.bean.SelectSongBean
 import com.example.dullmusic.bean.Song
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class MainViewModel(private val application: Application) : AndroidViewModel(application) {
     /**
@@ -42,6 +42,7 @@ class MainViewModel(private val application: Application) : AndroidViewModel(app
      */
     suspend fun requestMusicSong(
         musicData: String,
+        musicPlayData: String = "",
         isRefresh: Boolean = false,
         action: (dataList: MutableList<Song>) -> Unit = {}
     ) {
@@ -92,7 +93,7 @@ class MainViewModel(private val application: Application) : AndroidViewModel(app
                         _musicSongList += Song(0, name, artist, album, data, duration, size)
                     }
                 }
-                MainScope().launch {
+                withContext(Dispatchers.Main) {
                     _musicSongList.reverse()
                     musicSongList.value = _musicSongList
                     action.invoke(_musicSongList)
@@ -100,9 +101,12 @@ class MainViewModel(private val application: Application) : AndroidViewModel(app
                 cursor.close()
             }
         } else {
-            MainScope().launch {
+            withContext(Dispatchers.Main) {
+                if(musicPlayData != ""){
+                    val songMutableList = gson.fromJson(musicPlayData, GsonSongBean::class.java).musicList
+                    musicPlaySongList.value = songMutableList
+                }
                 val fromJson = gson.fromJson(musicData, GsonSongBean::class.java)
-                fromJson.musicList.reverse()
                 musicSongList.value = fromJson.musicList
             }
         }

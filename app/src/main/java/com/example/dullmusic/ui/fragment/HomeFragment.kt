@@ -7,12 +7,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.example.base.base.BaseFragment
 import com.example.base.base.BaseRvAdapter
 import com.example.base.utils.*
 import com.example.dullmusic.R
 import com.example.dullmusic.R.color
+import com.example.dullmusic.bean.GsonSongBean
 import com.example.dullmusic.bean.IconTextBean
 import com.example.dullmusic.bean.SelectSongBean
 import com.example.dullmusic.databinding.FragmentHomeBinding
@@ -20,12 +22,10 @@ import com.example.dullmusic.databinding.ItemSongLayoutBinding
 import com.example.dullmusic.bean.Song
 import com.example.dullmusic.databinding.ItemHomeEntryLayoutBinding
 import com.example.dullmusic.ui.activity.main.MainActivity
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
+import com.google.android.exoplayer2.MediaItem
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.launch
 
 class HomeFragment : BaseFragment() {
     private val binding by lazy {
@@ -42,7 +42,25 @@ class HomeFragment : BaseFragment() {
     ): View {
         initEntryRv()
         initMediaRv()
+        initClick()
         return binding.root
+    }
+
+    /**
+     * 初始化点击事件
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun initClick() {
+        binding.contentPlay.setOnClickListener(myOnMultiClickListener {
+            if (mMainActivity.mainViewModel.musicSongList.value!!.size > 0) {
+                val song = mMainActivity.mainViewModel.musicSongList.value!![0]
+                mMainActivity.sharedPreferencesEdit.putString("selectSongPath", song.data)
+                mMainActivity.sharedPreferencesEdit.commit()
+                songBaseRvAdapter.index = 0
+                mMainActivity.mainViewModel.musicPlaySongList.value =
+                    mMainActivity.mainViewModel.musicSongList.value
+            }
+        })
     }
 
     /**
@@ -51,12 +69,11 @@ class HomeFragment : BaseFragment() {
     @RequiresApi(Build.VERSION_CODES.O)
     private fun initEntryRv() {
         val mutableListOf = mutableListOf<IconTextBean>()
-        mutableListOf += IconTextBean(R.drawable.icon_play_list, "歌单")
+        mutableListOf += IconTextBean(R.drawable.icon_play_list, "播放列表")
         mutableListOf += IconTextBean(R.drawable.icon_music_library, "专辑")
         mutableListOf += IconTextBean(R.drawable.people_black_24dp, "艺术家")
         binding.contentEntryRv.adapter = BaseRvAdapter(
-            mutableListOf,
-            R.layout.item_home_entry_layout
+            mutableListOf, R.layout.item_home_entry_layout
         ) { itemData, view, position ->
             val itemHomeEntryLayoutBinding = ItemHomeEntryLayoutBinding.bind(view)
             itemHomeEntryLayoutBinding.itemHomeEntryIcon.setImageResource(itemData.icon)
@@ -69,14 +86,17 @@ class HomeFragment : BaseFragment() {
                 }
             })
         }
-        mMainActivity.mainViewModel.isOtherPages.observe(this){
-            if(!it){
+        mMainActivity.mainViewModel.isOtherPages.observe(this) {
+            if (!it) {
                 binding.contentRv.visibility = View.VISIBLE
-            }else{
+            } else {
                 binding.contentRv.visibility = View.GONE
             }
         }
     }
+
+
+    lateinit var songBaseRvAdapter: BaseRvAdapter<Song>
 
     /**
      * 初始化媒体库
@@ -88,7 +108,7 @@ class HomeFragment : BaseFragment() {
         binding.contentRv.itemAnimator = null
         mMainActivity.mainViewModel.musicSongList.observe(this) { songList ->
             binding.mediaText.text = "${songList.size} 首歌曲"
-            val songBaseRvAdapter =
+            songBaseRvAdapter =
                 BaseRvAdapter(songList, R.layout.item_song_layout) { itemData, view, position ->
                     val itemSongLayoutBinding = ItemSongLayoutBinding.bind(view)
                     itemSongLayoutBinding.musicTitle.text = itemData.name
@@ -111,6 +131,38 @@ class HomeFragment : BaseFragment() {
 
                     itemSongLayoutBinding.root.setOnClickListener(myOnMultiClickListener {
                         if (index != position) {
+                            // 判断当前选中的歌曲是否在播放列表中，存在则跳过，不存在则添加
+                            if ((mMainActivity.mainViewModel.musicPlaySongList.value?.contains(
+                                    itemData
+                                ) == false)
+                            ) {
+                                val currentPosition =
+                                    mMainActivity.audioBinder.getCurrentMediaItemIndex()
+                                if (currentPosition + 1 == mMainActivity.mainViewModel.musicPlaySongList.value!!.size) {
+                                    mMainActivity.audioBinder.addMediaItem(
+                                        MediaItem.fromUri(
+                                            itemData.data
+                                        )
+                                    )
+                                    mMainActivity.mainViewModel.musicPlaySongList.value!!.add(
+                                        itemData
+                                    )
+                                } else {
+                                    mMainActivity.audioBinder.addMediaItem(
+                                        MediaItem.fromUri(
+                                            itemData.data
+                                        ), currentPosition + 1
+                                    )
+                                    mMainActivity.mainViewModel.musicPlaySongList.value!!.add(
+                                        currentPosition + 1, itemData
+                                    )
+                                }
+                                mMainActivity.sharedPreferencesEdit.putString(
+                                    "SongPlayListString",
+                                    gson.toJson(GsonSongBean(mMainActivity.mainViewModel.musicPlaySongList.value!!))
+                                )
+                                mMainActivity.sharedPreferencesEdit.commit()
+                            }
                             mMainActivity.isClickOnTheNextSong = true
                             index = position
                             // 开启动画效果
@@ -118,29 +170,34 @@ class HomeFragment : BaseFragment() {
                         }
                     })
                 }
-            val selectSongPosition = mMainActivity.sharedPreferences.getInt("selectSongPosition", 0)
-            songBaseRvAdapter.index = selectSongPosition
-            mMainActivity.audioBinder.seekIndexNotPlayer(selectSongPosition)
+
+            val selectSongPath = mMainActivity.sharedPreferences.getString("selectSongPath", "")
+            songBaseRvAdapter.index = mMainActivity.selectIndex(selectSongPath)
+            mMainActivity.audioBinder.seekIndexNotPlayer(
+                mMainActivity.selectIndexMusicPlay(
+                    selectSongPath
+                )
+            )
+            val linearLayoutManager = LinearLayoutManager(requireContext())
+            binding.contentRv.layoutManager = linearLayoutManager
             binding.contentRv.adapter = songBaseRvAdapter
             mMainActivity.setEndOfSongListener {
                 mMainActivity.isTheNextSongClick = true
                 songBaseRvAdapter.index = it
             }
 
-            mMainActivity.setSeekToNextOnClickListener { selectPosition, musicSongListMaxSize ->
-                if (musicSongListMaxSize == selectPosition + 1) {
-                    songBaseRvAdapter.index = 0
-                } else {
-                    songBaseRvAdapter.index = selectPosition + 1
+            mMainActivity.setPlayListDialogF(object : MainActivity.PlayListDialog {
+                override fun onPlayListener(path: String) {
+                    songBaseRvAdapter.index = mMainActivity.selectIndex(path)
                 }
+            })
+
+            mMainActivity.setSeekToNextOnClickListener { selectPosition ->
+                songBaseRvAdapter.index = selectPosition
             }
 
-            mMainActivity.setSeekToPreviousOnClickListener { selectPosition, musicSongListMaxSize ->
-                if (selectPosition - 1 < 0) {
-                    songBaseRvAdapter.index = musicSongListMaxSize - 1
-                } else {
-                    songBaseRvAdapter.index = selectPosition - 1
-                }
+            mMainActivity.setSeekToPreviousOnClickListener { selectPosition ->
+                songBaseRvAdapter.index = selectPosition
             }
         }
     }
@@ -150,16 +207,14 @@ class HomeFragment : BaseFragment() {
      */
     @RequiresApi(Build.VERSION_CODES.O)
     private fun BaseRvAdapter<Song>.setImageBitmap(
-        itemData: Song,
-        itemSongLayoutBinding: ItemSongLayoutBinding,
-        position: Int
+        itemData: Song, itemSongLayoutBinding: ItemSongLayoutBinding, position: Int
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             flow {
                 val bitmap = getAlbumPicture(itemData.data)
                 emit(bitmap)
             }.collect {
-                MainScope().launch {
+                withContext(Dispatchers.Main) {
                     itemSongLayoutBinding.musicPhotos.setImageBitmap(it)
                     if (index == position) {
                         mMainActivity.mainViewModel.selectBitmap.value = it
@@ -169,7 +224,7 @@ class HomeFragment : BaseFragment() {
         }
 
         if (index == position) {
-            mMainActivity.sharedPreferencesEdit.putInt("selectSongPosition", position)
+            mMainActivity.sharedPreferencesEdit.putString("selectSongPath", itemData.data)
             mMainActivity.sharedPreferencesEdit.commit()
             selectedEvents(position, itemData)
         }

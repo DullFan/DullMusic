@@ -30,6 +30,7 @@ class ExoPlayerManager constructor(application: Application) {
                 }
             }
         })
+
     }
 
     /**
@@ -167,6 +168,13 @@ class ExoPlayerManager constructor(application: Application) {
      */
     fun getCurrentPosition(): Long {
         return exoPlayer.currentPosition
+    }
+
+    /**
+     * 获取当前播放歌曲Index
+     */
+    fun getCurrentMediaItemIndex(): Int {
+        return exoPlayer.currentMediaItemIndex
     }
 
 
