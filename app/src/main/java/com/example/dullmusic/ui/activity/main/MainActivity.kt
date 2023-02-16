@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.AlertDialog
 import android.content.*
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.ColorDrawable
@@ -27,21 +28,22 @@ import com.example.base.utils.*
 import com.example.dullmusic.R
 import com.example.dullmusic.bean.GsonSongBean
 import com.example.dullmusic.bean.SelectSongBean
+import com.example.dullmusic.bean.Song
 import com.example.dullmusic.databinding.ActivityMainBinding
 import com.example.dullmusic.databinding.DialogPermissionsLayoutBinding
 import com.example.dullmusic.databinding.DialogPlayListLayoutBinding
 import com.example.dullmusic.databinding.ItemPlayListLayoutBinding
-import com.example.dullmusic.lrc.LrcBean
 import com.example.dullmusic.lrc.parseLrcFile
 import com.example.dullmusic.lrc.parseStr2List
+import com.example.dullmusic.tool.*
 import com.example.dullmusic.ui.activity.SettingActivity
 import com.example.dullmusic.ui.fragment.*
 import com.example.media.ExoPlayerManager
 import com.example.media.ExoPlayerService
 import com.google.android.exoplayer2.MediaItem
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.*
-
 
 const val MIN_OUT_LAYOUT_TIME = 1000
 var lastOutLayoutTime = 0L
@@ -56,28 +58,10 @@ open class MainActivity : BaseActivity() {
         )[MainViewModel::class.java]
     }
 
-    /**
-     * 是否展开媒体
-     */
-    private var motionLayoutIsExpand = false
 
     /**
-     * 是否手动点击切换音乐，防止二次调用audioBinder.seekIndex(it.selectPosition)
+     * 权限申请对话框
      */
-    var isClickOnTheNextSong = true
-
-    /**
-     *  判断展开播放器点击的是下一首还是上一首，分别开启不同的动画效果
-     */
-    var isTheNextSongClick = true
-
-    val sharedPreferences: SharedPreferences by lazy {
-        getSharedPreferences("data", MODE_PRIVATE)
-    }
-    val sharedPreferencesEdit: SharedPreferences.Editor by lazy {
-        sharedPreferences.edit()
-    }
-
     lateinit var permissionsDialog: AlertDialog
 
     /**
@@ -90,160 +74,19 @@ open class MainActivity : BaseActivity() {
             }
         }
 
-    private fun requestData() {
-        CoroutineScope(Dispatchers.IO).launch {
-            val musicData = sharedPreferences.getString(
-                "musicListString", ""
-            ) ?: ""
-            val musicPlayListData = sharedPreferences.getString(
-                "SongPlayListString", ""
-            ) ?: ""
-
-            mainViewModel.requestMusicSong(
-                musicData, musicPlayListData
-            ) { musicList ->
-                if (musicPlayListData == "") {
-                    sharedPreferencesEdit.putString(
-                        "SongPlayListString", gson.toJson(GsonSongBean(musicList))
-                    )
-                    sharedPreferencesEdit.commit()
-                }
-
-                sharedPreferencesEdit.putString(
-                    "musicListString", gson.toJson(GsonSongBean(musicList))
-                )
-                sharedPreferencesEdit.commit()
-            }
-            withContext(Dispatchers.Main) {
-                if (::permissionsDialog.isInitialized) {
-                    permissionsDialog.dismiss()
-                }
-                bindExoPlayerService()
-            }
-        }
-    }
-
-    val bottomSheetDialog by lazy {
-        BottomSheetDialog(this, R.style.BottomSheetDialogStyle)
-    }
-
-    /**
-     * 播放列表
-     */
-    private fun clickBottomSheetDialog() {
-        binding.musicList.setOnClickListener(myOnMultiClickListener {
-            if(mainViewModel.musicPlaySongList.value?.size != 0){
-                val dialogPlayListLayoutBinding = DialogPlayListLayoutBinding.inflate(layoutInflater)
-                bottomSheetDialog.setContentView(dialogPlayListLayoutBinding.root)
-                dialogPlayListLayoutBinding.close.setOnClickListener(myOnMultiClickListener {
-                    bottomSheetDialog.hide()
-                })
-                val linearLayoutManager = LinearLayoutManager(this)
-                dialogPlayListLayoutBinding.dialogPlayListRv.layoutManager = linearLayoutManager
-                val songMutableList = mainViewModel.musicPlaySongList.value
-                val dialogBottomSheetRvAdapter = BaseRvAdapterPosition(
-                    songMutableList!!.toList(), R.layout.item_play_list_layout
-                ) { itemData, view, position, holderPosition ->
-                    val itemPlayListLayoutBinding = ItemPlayListLayoutBinding.bind(view)
-                    itemPlayListLayoutBinding.title.text = itemData.name
-                    itemPlayListLayoutBinding.name.text = itemData.artist
-
-                    if (index == position) {
-                        sharedPreferencesEdit.putString("selectSongPath", itemData.data)
-                        sharedPreferencesEdit.commit()
-                        itemPlayListLayoutBinding.itemClose.visibility = View.GONE
-                        itemPlayListLayoutBinding.title.setTextColor(resources.getColor(R.color.purple_200))
-                        itemPlayListLayoutBinding.name.setTextColor(resources.getColor(R.color.purple_200))
-                    } else {
-                        itemPlayListLayoutBinding.itemClose.visibility = View.VISIBLE
-                        itemPlayListLayoutBinding.title.setTextColor(resources.getColor(R.color.black))
-                        itemPlayListLayoutBinding.name.setTextColor(resources.getColor(R.color.text_grey))
-                    }
-
-                    itemPlayListLayoutBinding.root.setOnClickListener(myOnMultiClickListener {
-                        if (index != position) {
-                            isClickOnTheNextSong = true
-                            if (!isNotFirstEntry) isNotFirstEntry = true
-                            index = position
-                            playListDialog.onPlayListener(itemData.data)
-                        }
-                    })
-                    itemPlayListLayoutBinding.itemClose.setOnClickListener(myOnMultiClickListener {
-                        val selectIndexMusicPlay = selectIndexMusicPlay(itemData.data)
-                        val value = mainViewModel.musicPlaySongList.value
-                        value!!.removeAt(selectIndexMusicPlay)
-
-                        sharedPreferencesEdit.putString(
-                            "SongPlayListString", gson.toJson(GsonSongBean(value))
-                        )
-                        sharedPreferencesEdit.commit()
-                        audioBinder.removeMediaItem(selectIndexMusicPlay)
-                        if (position < index) {
-                            index -= 1
-                        }
-                        dataList = value
-                    })
-                }
-                dialogPlayListLayoutBinding.dialogPlayListRv.adapter = dialogBottomSheetRvAdapter
-                val selectSongPath = sharedPreferences.getString("selectSongPath", "")
-                val selectIndex = selectIndexMusicPlay(selectSongPath)
-                linearLayoutManager.scrollToPositionWithOffset(selectIndex, 100.px.toInt())
-                dialogBottomSheetRvAdapter.index = selectIndex
-                bottomSheetDialog.show()
-            }
-        })
-    }
-
-    /**
-     * 通过路径判断下标
-     */
-    fun selectIndex(selectSongPath: String?): Int {
-        val index = if (selectSongPath == "") {
-            0
-        } else {
-            var i = 0
-            mainViewModel.musicSongList.value?.forEachIndexed { index, song ->
-                if (selectSongPath == song.data) {
-                    i = index
-                }
-            }
-            i
-        }
-        return index
-    }
-
-    /**
-     * 通过路径判断当前播放列表下标位置
-     */
-    fun selectIndexMusicPlay(selectSongPath: String?): Int {
-        val index = if (selectSongPath == "") {
-            0
-        } else {
-            var i = 0
-            mainViewModel.musicPlaySongList.value?.forEachIndexed { index, song ->
-                if (selectSongPath == song.data) {
-                    i = index
-                }
-            }
-            i
-        }
-        return index
-    }
-
     private val permissions = arrayOf(
         Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE
     )
-
-    lateinit var audioBinder: ExoPlayerService.AudioBinder
 
     /**
      * 歌曲进度监听Handler
      */
     private val progressHandler: Handler = object : Handler(Looper.myLooper()!!) {
         override fun handleMessage(msg: Message) {
-            if (::audioBinder.isInitialized && binding.musicPlayPause.tag == "play") {
-                val currentPosition = audioBinder.getCurrentPosition().toInt()
-                binding.musicSeekbar.progress = audioBinder.getCurrentPosition().toInt()
+            if (binding.musicPlayPause.tag == "play") {
+                val currentPosition = mainViewModel.audioBinder.getCurrentPosition().toInt()
+                binding.musicSeekbar.progress =
+                    mainViewModel.audioBinder.getCurrentPosition().toInt()
                 binding.musicSeekbarStartTime.text = convertComponentSeconds(currentPosition)
                 lrcSet(currentPosition)
                 if (::mainLrcHandler.isInitialized && binding.fragment.visibility == View.VISIBLE) {
@@ -254,30 +97,10 @@ open class MainActivity : BaseActivity() {
         }
     }
 
-    /**
-     * 切换歌曲时通知歌词切换数据
-     */
-    interface MainLrcEndOfSong {
-        fun onEndOfSongPlayListener()
-    }
-
-    /**
-     * 歌词详情Handler监听
-     */
-    interface MainLrcHandler {
-        fun onMainHandlerListener()
-    }
-
-    /**
-     * 和播放列表进行绑定
-     */
-    interface PlayListDialog {
-        fun onPlayListener(path: String)
-    }
-
     lateinit var mainLrcEndOfSong: MainLrcEndOfSong
     lateinit var mainLrcHandler: MainLrcHandler
     lateinit var playListDialog: PlayListDialog
+
     fun setMainLrcHandlerF(_action: MainLrcHandler) {
         mainLrcHandler = _action
     }
@@ -290,9 +113,30 @@ open class MainActivity : BaseActivity() {
         playListDialog = _action
     }
 
+    /**
+     * 切换歌曲时通知歌词切换数据
+     */
+    fun interface MainLrcEndOfSong {
+        fun onEndOfSongPlayListener()
+    }
+
+    /**
+     * 歌词详情Handler监听
+     */
+    fun interface MainLrcHandler {
+        fun onMainHandlerListener()
+    }
+
+    /**
+     * 和播放列表进行绑定
+     */
+    fun interface PlayListDialog {
+        fun onPlayListener(path: String)
+    }
+
     private fun lrcSet(currentPosition: Int) {
-        if (lrcBeanList.size != 0) {
-            lrcBeanList.forEach {
+        if (mainViewModel.lrcBeanList.size != 0 && binding.musicLyrics.text != "暂无歌词") {
+            mainViewModel.lrcBeanList.forEach {
                 //因为要启动动画所以加400毫秒
                 val i = currentPosition + 400
                 if (i >= it.start && i <= it.end && binding.musicLyrics.text != it.lrc) {
@@ -308,10 +152,10 @@ open class MainActivity : BaseActivity() {
         getSystemService(Context.AUDIO_SERVICE) as AudioManager
     }
 
-    var currentLrcIndex = 0
 
-    var lrcBeanList: MutableList<LrcBean> = mutableListOf()
-
+    /**
+     * 焦点请求
+     */
     val focusRequest by lazy {
         AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN).run {
             setAudioAttributes(AudioAttributes.Builder().run {
@@ -321,7 +165,7 @@ open class MainActivity : BaseActivity() {
             })
             setAcceptsDelayedFocusGain(true)
             setOnAudioFocusChangeListener { focusChange ->
-                audioBinder.stopMediaPlayerNoJudgment()
+                mainViewModel.audioBinder.stopMediaPlayerNoJudgment()
                 binding.musicPlayPause.tag = "pause"
                 binding.musicPlayPause.setImageResource(R.drawable.icon_pause)
             }
@@ -336,9 +180,112 @@ open class MainActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        window.statusBarColor = Color.TRANSPARENT
-        WindowCompat.setDecorFitsSystemWindows(window, false)
         requestPermission()
+    }
+
+    /**
+     * 请求数据
+     */
+    private fun requestData() {
+        CoroutineScope(Dispatchers.IO).launch {
+            mainViewModel.requestMusicSong()
+            withContext(Dispatchers.Main) {
+                if (::permissionsDialog.isInitialized) {
+                    permissionsDialog.dismiss()
+                }
+                bindExoPlayerService()
+            }
+        }
+    }
+
+    val bottomSheetDialog by lazy {
+        BottomSheetDialog(this, R.style.BottomSheetDialogStyle)
+    }
+
+    lateinit var dialogBottomSheetRvAdapter: BaseRvAdapterPosition<Song>
+
+    /**
+     * 播放列表
+     */
+    private fun clickBottomSheetDialog() {
+        binding.musicList.setOnClickListener(myOnMultiClickListener {
+            if (mainViewModel.musicPlaySongList.value?.size != 0) {
+                val dialogPlayListLayoutBinding =
+                    DialogPlayListLayoutBinding.inflate(layoutInflater)
+                bottomSheetDialog.setContentView(dialogPlayListLayoutBinding.root)
+                bottomSheetDialog.behavior.isHideable = false
+                dialogPlayListLayoutBinding.close.setOnClickListener(myOnMultiClickListener {
+                    bottomSheetDialog.hide()
+                })
+                val linearLayoutManager = LinearLayoutManager(this)
+                dialogPlayListLayoutBinding.dialogPlayListRv.layoutManager = linearLayoutManager
+                val songMutableList = mainViewModel.musicPlaySongList.value
+                dialogBottomSheetRvAdapter = BaseRvAdapterPosition(
+                    songMutableList!!.toList(), R.layout.item_play_list_layout
+                ) { itemData, view, position, holderPosition ->
+                    val itemPlayListLayoutBinding = ItemPlayListLayoutBinding.bind(view)
+                    itemPlayListLayoutBinding.title.text = itemData.name
+                    itemPlayListLayoutBinding.name.text = itemData.artist
+
+                    if (index == position) {
+                        mainViewModel.sharedPreferencesEditCommitData {
+                            putString(SELECT_SONG_PATH, itemData.data)
+                        }
+                        itemPlayListLayoutBinding.itemClose.visibility = View.GONE
+                        itemPlayListLayoutBinding.title.setTextColor(resources.getColor(R.color.purple_200))
+                        itemPlayListLayoutBinding.name.setTextColor(resources.getColor(R.color.purple_200))
+                    } else {
+                        itemPlayListLayoutBinding.itemClose.visibility = View.VISIBLE
+                        itemPlayListLayoutBinding.title.setTextColor(resources.getColor(R.color.black))
+                        itemPlayListLayoutBinding.name.setTextColor(resources.getColor(R.color.text_grey))
+                    }
+
+                    itemPlayListLayoutBinding.root.setOnClickListener(myOnMultiClickListener {
+                        if (fileExists(itemData.data)) {
+                            if (index != position) {
+                                isClickOnTheNextSong = true
+                                if (!isNotFirstEntry) isNotFirstEntry = true
+                                index = position
+                                playListDialog.onPlayListener(itemData.data)
+                            }
+                        } else {
+                            showToast(this@MainActivity, "找不到此文件,可能文件已经被迁移或被删除")
+                        }
+                    })
+                    itemPlayListLayoutBinding.itemClose.setOnClickListener(myOnMultiClickListener {
+                        val selectIndexMusicPlay = mainViewModel.selectIndexMusicPlay(itemData.data)
+                        val value = mainViewModel.musicPlaySongList.value
+                        value!!.removeAt(selectIndexMusicPlay)
+                        mainViewModel.sharedPreferencesEditCommitData {
+                            putString(
+                                SONG_PLAY_LIST_STRING, gson.toJson(GsonSongBean(value))
+                            )
+                        }
+                        mainViewModel.audioBinder.removeMediaItem(selectIndexMusicPlay)
+                        if (position < index) {
+                            index -= 1
+                        }
+                        dataList = value
+                    })
+                }
+                dialogPlayListLayoutBinding.dialogPlayListRv.adapter = dialogBottomSheetRvAdapter
+                val selectSongPath = mainViewModel.getSelectSongPath()
+                val selectIndex = mainViewModel.selectIndexMusicPlay(selectSongPath)
+                linearLayoutManager.scrollToPositionWithOffset(selectIndex, 100.px.toInt())
+                dialogBottomSheetRvAdapter.index = selectIndex
+                bottomSheetDialog.show()
+            }
+        })
+    }
+
+
+    /**
+     * TODO 横竖屏切换的时候使用的方法
+     */
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+
+
     }
 
     /**
@@ -346,14 +293,12 @@ open class MainActivity : BaseActivity() {
      */
     @RequiresApi(Build.VERSION_CODES.O)
     private fun basicConfiguration() {
-        mainViewModel.musicPlaySongList.observe(this){
+        mainViewModel.musicPlaySongList.observe(this) {
             val mediaItems = mutableListOf<MediaItem>()
             it.forEach {
                 mediaItems += MediaItem.fromUri(it.data)
             }
-            if (::audioBinder.isInitialized) {
-                audioBinder.setMediaItems(mediaItems)
-            }
+            mainViewModel.audioBinder.setMediaItems(mediaItems)
         }
 
         // 启动Handler
@@ -362,38 +307,10 @@ open class MainActivity : BaseActivity() {
          * 选中歌触发
          */
         mainViewModel.selectSongBean.observe(this) {
-            if (!isNotFirstEntry) setTitleAuthorText(it)
-            // 争夺焦点
-            audioManager.requestAudioFocus(focusRequest)
-            binding.musicPhotos.setImageBitmap(mainViewModel.selectBitmap.value)
-
-            //处理歌词
-            CoroutineScope(Dispatchers.IO).launch {
-                lrcBeanList.clear()
-                val replace = it.song.data.replace(".mp3", ".lrc")
-                if (fileExists(replace)) {
-                    val parseLrcFile = parseLrcFile(replace)
-                    lrcBeanList = parseStr2List(parseLrcFile)
-                    withContext(Dispatchers.Main) {
-                        if (lrcBeanList.size != 0) {
-                            binding.musicLyrics.text = lrcBeanList[0].lrc
-                        } else {
-                            binding.musicLyrics.text = "暂无歌词"
-                        }
-                    }
-                } else {
-                    withContext(Dispatchers.Main) {
-                        binding.musicLyrics.text = "暂无歌词"
-                    }
-                }
-
-                withContext(Dispatchers.Main) {
-                    if (::mainLrcEndOfSong.isInitialized && binding.fragment.visibility == View.VISIBLE) {
-                        mainLrcEndOfSong.onEndOfSongPlayListener()
-                    }
-                }
+            if (!isNotFirstEntry) {
+                setTitleAuthorText(it)
             }
-
+            //判断启动什么动画效果
             if (motionLayoutIsExpand) {
                 if (isTheNextSongClick) {
                     startTextExpandNextAnimator(binding.musicTitleExpand) {
@@ -415,23 +332,36 @@ open class MainActivity : BaseActivity() {
                 startTextAnimator(binding.musicAuthor)
             }
 
+            setLrc(it)
+            //将时长进行初始化
             binding.musicSeekbarStartTime.text = "00:00"
             binding.musicSeekbarEndTime.text = convertComponentSeconds(it.song.duration)
             binding.musicSeekbar.max = it.song.duration
             binding.musicSeekbar.progress = 0
 
-            if (::audioBinder.isInitialized && isClickOnTheNextSong) {
-                if (isNotFirstEntry) {
-                    audioBinder.seekIndex(selectIndexMusicPlay(it.song.data))
-                    isTheStateSuspended()
+            if (fileExists(it.song.data)) {
+                if (!mainViewModel.isOnClickRefresh) {
+                    // 争夺焦点
+                    audioManager.requestAudioFocus(focusRequest)
+                    //进行播放歌曲
+                    if (isNotFirstEntry && isClickOnTheNextSong) {
+                        mainViewModel.audioBinder.seekIndex(
+                            mainViewModel.selectIndexMusicPlay(
+                                it.song.data
+                            )
+                        )
+                        isTheStateSuspended()
+                    }
                 }
+            } else {
+                showToast(this, "找不到此文件,可能文件已经被迁移或被删除")
             }
+            mainViewModel.isOnClickRefresh = false
         }
 
         mainViewModel.selectBitmap.observe(this) {
             binding.musicPhotos.setImageBitmap(it)
         }
-
 
         binding.materialCardPlayView.setOnClickListener(myOnMultiClickListener {
             audioManager.requestAudioFocus(focusRequest)
@@ -461,12 +391,42 @@ open class MainActivity : BaseActivity() {
             }
 
             override fun onStopTrackingTouch(p0: SeekBar) {
-                audioBinder.seekTo(p0.progress.toLong())
+                mainViewModel.audioBinder.seekTo(p0.progress.toLong())
                 binding.musicSeekbarStartTime.text =
-                    convertComponentSeconds(audioBinder.getCurrentPosition().toInt())
+                    convertComponentSeconds(mainViewModel.audioBinder.getCurrentPosition().toInt())
                 isTheStateSuspended()
             }
         })
+    }
+
+    /**
+     * 设置歌词
+     */
+    private fun setLrc(it: SelectSongBean) {
+        CoroutineScope(Dispatchers.IO).launch {
+            mainViewModel.lrcBeanList.clear()
+            val replace = it.song.data.replace(".mp3", ".lrc")
+            if (fileExists(replace)) {
+                val parseLrcFile = parseLrcFile(replace)
+                mainViewModel.lrcBeanList = parseStr2List(parseLrcFile)
+                withContext(Dispatchers.Main) {
+                    if (mainViewModel.lrcBeanList.size != 0) {
+                        binding.musicLyrics.text = mainViewModel.lrcBeanList[0].lrc
+                        withContext(Dispatchers.Main) {
+                            if (::mainLrcEndOfSong.isInitialized && binding.fragment.visibility == View.VISIBLE) {
+                                mainLrcEndOfSong.onEndOfSongPlayListener()
+                            }
+                        }
+                    } else {
+                        binding.musicLyrics.text = "暂无歌词"
+                    }
+                }
+            } else {
+                withContext(Dispatchers.Main) {
+                    binding.musicLyrics.text = "暂无歌词"
+                }
+            }
+        }
     }
 
     /**
@@ -475,7 +435,7 @@ open class MainActivity : BaseActivity() {
     fun playMusic() {
         binding.musicPlayPause.tag = "play"
         binding.musicPlayPause.setImageResource(R.drawable.icon_play)
-        audioBinder.playerMedia()
+        mainViewModel.audioBinder.playerMedia()
         progressHandler.sendEmptyMessageDelayed(1, 500)
     }
 
@@ -490,16 +450,16 @@ open class MainActivity : BaseActivity() {
         binding.musicSkipNext.setOnClickListener(myOnMultiClickListener {
             if (!isNotFirstEntry) isNotFirstEntry = true
             isTheNextSongClick = true
-            val selectSongPath = sharedPreferences.getString("selectSongPath", "")
-            val selectIndex = selectIndexMusicPlay(selectSongPath)
+            val selectSongPath = mainViewModel.getSelectSongPath()
+            val selectIndex = mainViewModel.selectIndexMusicPlay(selectSongPath)
             val songMutableList = mainViewModel.musicPlaySongList.value
             val data = if (selectIndex + 1 == songMutableList!!.size) {
                 songMutableList[0].data
             } else {
                 songMutableList[selectIndex + 1].data
             }
-            action.invoke(selectIndex(data))
-            audioBinder.seekToNext()
+            action.invoke(mainViewModel.selectIndex(data))
+            mainViewModel.audioBinder.seekToNext()
         })
     }
 
@@ -507,37 +467,37 @@ open class MainActivity : BaseActivity() {
         binding.musicSkipPrevious.setOnClickListener(myOnMultiClickListener {
             if (!isNotFirstEntry) isNotFirstEntry = true
             isTheNextSongClick = false
-            val selectSongPath = sharedPreferences.getString("selectSongPath", "")
-            val selectIndex = selectIndexMusicPlay(selectSongPath)
+            val selectSongPath = mainViewModel.getSelectSongPath()
+            val selectIndex = mainViewModel.selectIndexMusicPlay(selectSongPath)
             val songMutableList = mainViewModel.musicPlaySongList.value
             val data = if (selectIndex - 1 < 0) {
                 songMutableList!![songMutableList.size - 1].data
             } else {
                 songMutableList!![selectIndex - 1].data
             }
-            action.invoke(selectIndex(data))
-            audioBinder.seekToPrevious()
+            action.invoke(mainViewModel.selectIndex(data))
+            mainViewModel.audioBinder.seekToPrevious()
         })
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun isTheStateSuspended() {
-        if (!audioBinder.mediaIsPlaying()) {
+        if (!mainViewModel.audioBinder.mediaIsPlaying()) {
             if (binding.musicPlayPause.tag == "pause") {
                 mediaPlayerPause()
             } else {
-                audioBinder.playerMedia()
+                mainViewModel.audioBinder.playerMedia()
             }
         }
     }
 
     fun setEndOfSongListener(callback: (currentPosition: Int) -> Unit) {
-        audioBinder.setEndOfSong(object : ExoPlayerManager.EndOfSongFan {
+        mainViewModel.audioBinder.setEndOfSong(object : ExoPlayerManager.EndOfSongFan {
             override fun onEndOfSongPlayListener(currentPosition: Int) {
                 isClickOnTheNextSong = false
                 isTheNextSongClick = true
                 val songMutableList = mainViewModel.musicPlaySongList.value
-                callback.invoke(selectIndex(songMutableList?.get(currentPosition)?.data))
+                callback.invoke(mainViewModel.selectIndex(songMutableList?.get(currentPosition)?.data))
             }
         })
     }
@@ -545,14 +505,14 @@ open class MainActivity : BaseActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     private fun mediaPlayerPause() {
         if (!isNotFirstEntry) isNotFirstEntry = true
-        if (audioBinder.mediaIsPlaying()) {
+        if (mainViewModel.audioBinder.mediaIsPlaying()) {
             binding.musicPlayPause.tag = "pause"
             binding.musicPlayPause.setImageResource(R.drawable.icon_play_anim)
-            audioBinder.stopMediaPlayer()
+            mainViewModel.audioBinder.stopMediaPlayer()
         } else {
             binding.musicPlayPause.tag = "play"
             binding.musicPlayPause.setImageResource(R.drawable.icon_pause_anim)
-            audioBinder.playerMedia()
+            mainViewModel.audioBinder.playerMedia()
         }
         ((binding.musicPlayPause.drawable) as Animatable).start()
     }
@@ -564,7 +524,7 @@ open class MainActivity : BaseActivity() {
         val connection = object : ServiceConnection {
             override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
                 if (p1 != null) {
-                    audioBinder = p1 as ExoPlayerService.AudioBinder
+                    mainViewModel.audioBinder = p1 as ExoPlayerService.AudioBinder
                     startHomeFragment()
                     startSetting()
                     motionLayoutListener()
@@ -620,21 +580,21 @@ open class MainActivity : BaseActivity() {
     /**
      * 跳转媒体库
      */
-    public fun startPLayListFragment() {
+    fun startPLayListFragment() {
         addFragment(binding.contentFragment.id, PlayListFragment())
     }
 
     /**
      * 跳转媒体库
      */
-    public fun startArtistFragment() {
+    fun startArtistFragment() {
         addFragment(binding.contentFragment.id, ArtistFragment())
     }
 
     /**
      * 跳转歌单
      */
-    public fun startTheAlbumFragment() {
+    fun startTheAlbumFragment() {
         addFragment(binding.contentFragment.id, TheAlbumFragment())
     }
 

@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.os.IBinder
 import android.support.v4.media.MediaBrowserCompat
 import androidx.media.MediaBrowserServiceCompat
-import com.example.base.utils.showLog
 import com.google.android.exoplayer2.MediaItem
 
 class ExoPlayerService : MediaBrowserServiceCompat() {
@@ -70,6 +69,13 @@ class ExoPlayerService : MediaBrowserServiceCompat() {
         }
         fun getCurrentMediaItemIndex(): Int {
             return exoPlayerManager.getCurrentMediaItemIndex()
+        }
+        fun moveMediaItem(currentIndex: Int, newIndex: Int) {
+            exoPlayerManager.moveMediaItem(currentIndex, newIndex)
+        }
+
+        fun getMediaItemCount(): Int {
+            return exoPlayerManager.getMediaItemCount()
         }
     }
 

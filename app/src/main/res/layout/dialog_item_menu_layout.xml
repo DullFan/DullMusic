@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@android:color/transparent">
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="25dp"
+        app:cardCornerRadius="30dp"
+        app:strokeWidth="0dp">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/white"
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="30dp">
+
+            <androidx.constraintlayout.utils.widget.ImageFilterView
+                android:id="@+id/music_photos"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/default_avatar"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:round="10dp" />
+
+            <TextView
+                android:id="@+id/music_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:text="歌曲名称"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toTopOf="@id/music_view01"
+                app:layout_constraintLeft_toRightOf="@+id/music_photos" />
+
+            <TextView
+                android:id="@+id/music_author"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:text="歌手"
+                android:textSize="14sp"
+                app:layout_constraintLeft_toRightOf="@+id/music_photos"
+                app:layout_constraintTop_toBottomOf="@+id/music_view01" />
+
+            <View
+                android:id="@+id/music_view01"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="5dp"
+                app:layout_constraintBottom_toBottomOf="@+id/music_photos"
+                app:layout_constraintTop_toTopOf="@id/music_photos" />
+
+
+            <View
+                android:id="@+id/music_view02"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="10dp"
+                android:background="@color/grey"
+                app:layout_constraintTop_toBottomOf="@+id/music_photos" />
+
+            <TextView
+                android:id="@+id/music_add_play_song"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="20dp"
+                android:drawableLeft="@drawable/icon_add_black_24dp"
+                android:drawablePadding="10dp"
+                android:gravity="center|left"
+                android:singleLine="true"
+                android:text="添加到歌单"
+                android:textColor="@color/black"
+                android:textSize="16sp"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/music_view02" />
+
+
+            <TextView
+                android:id="@+id/music_next_song"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="20dp"
+                android:drawableLeft="@drawable/icon_playlist_add_black_24dp"
+                android:drawablePadding="10dp"
+                android:gravity="center|left"
+                android:singleLine="true"
+                android:text="下一首播放"
+                android:textColor="@color/black"
+                android:textSize="16sp"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/music_add_play_song" />
+
+            <TextView
+                android:id="@+id/music_share_song"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="20dp"
+                android:drawableLeft="@drawable/icon_share_black_24dp"
+                android:drawablePadding="10dp"
+                android:gravity="center|left"
+                android:singleLine="true"
+                android:text="分享"
+                android:textColor="@color/black"
+                android:textSize="16sp"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/music_next_song" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+</LinearLayout>

@@ -20,7 +20,6 @@ import com.example.dullmusic.lrc.LrcBean
 import com.example.dullmusic.ui.activity.main.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.DisposableHandle
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
@@ -36,42 +35,41 @@ class LrcFragment : BaseFragment() {
 
     lateinit var baseRvAdapter: BaseRvAdapter<LrcBean>
     lateinit var linearLayoutManager: LinearLayoutManager
+
+    /**
+     * 是否开始跳转到播放位置
+     */
     var whetherToScroll = true
-    var lastUpTime = 0
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         linearLayoutManager = MyLinearLayoutManager(requireContext())
-        mMainActivity.setMainLrcHandlerF(object : MainActivity.MainLrcHandler {
-            override fun onMainHandlerListener() {
-                val currentPosition = mMainActivity.audioBinder.getCurrentPosition()
-                if (::baseRvAdapter.isInitialized) {
-                    mMainActivity.lrcBeanList.forEachIndexed { index, lrcBean ->
-                        if (currentPosition >= lrcBean.start && index != baseRvAdapter.index) {
-                            mMainActivity.currentLrcIndex = index
-                            baseRvAdapter.index = index
-                            if (whetherToScroll) {
-                                linearLayoutManager.scrollToPositionWithOffset(
-                                    index, 100.px.toInt()
-                                )
-                            }
+        mMainActivity.setMainLrcHandlerF {
+            val currentPosition = mMainActivity.mainViewModel.audioBinder.getCurrentPosition()
+            if (::baseRvAdapter.isInitialized) {
+                mMainActivity.mainViewModel.lrcBeanList.forEachIndexed { index, lrcBean ->
+                    if (currentPosition >= lrcBean.start && index != baseRvAdapter.index) {
+                        mMainActivity.mainViewModel.currentLrcIndex = index
+                        baseRvAdapter.index = index
+                        if (whetherToScroll) {
+                            linearLayoutManager.scrollToPositionWithOffset(
+                                index, 100.px.toInt()
+                            )
                         }
                     }
                 }
             }
-        })
-        mMainActivity.setMainLrcEndOfSongF(object : MainActivity.MainLrcEndOfSong {
-            override fun onEndOfSongPlayListener() {
-                baseRvAdapter.dataList = mMainActivity.lrcBeanList
-                judgmentHide()
-            }
-        })
+        }
+        mMainActivity.setMainLrcEndOfSongF {
+            baseRvAdapter.dataList = mMainActivity.mainViewModel.lrcBeanList
+            judgmentHide()
+        }
         binding.rv.layoutManager = linearLayoutManager
         (binding.rv.itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
         baseRvAdapter = BaseRvAdapter(
-            mMainActivity.lrcBeanList, R.layout.item_lrc_rv_layout
+            mMainActivity.mainViewModel.lrcBeanList, R.layout.item_lrc_rv_layout
         ) { itemData, view, position ->
             val itemLrcRvLayoutBinding = ItemLrcRvLayoutBinding.bind(view)
             itemLrcRvLayoutBinding.itemText01.text = itemData.lrc
@@ -88,7 +86,7 @@ class LrcFragment : BaseFragment() {
                         20.px.toInt(), 80.px.toInt(), 20.px.toInt(), 0
                     )
                 }
-                mMainActivity.lrcBeanList.size - 1 -> {
+                mMainActivity.mainViewModel.lrcBeanList.size - 1 -> {
                     itemLrcRvLayoutBinding.itemLayout.setPadding(
                         20.px.toInt(), 0, 20.px.toInt(), 80.px.toInt()
                     )
@@ -101,8 +99,8 @@ class LrcFragment : BaseFragment() {
             }
 
             itemLrcRvLayoutBinding.itemLayout.setOnClickListener(myOnMultiClickListener {
-                mMainActivity.audioBinder.seekTo(itemData.start)
-                if (!mMainActivity.audioBinder.mediaIsPlaying()) {
+                mMainActivity.mainViewModel.audioBinder.seekTo(itemData.start)
+                if (!mMainActivity.mainViewModel.audioBinder.mediaIsPlaying()) {
                     mMainActivity.playMusic()
                 }
                 index = position
@@ -116,9 +114,9 @@ class LrcFragment : BaseFragment() {
                 itemLrcRvLayoutBinding.itemText02.setTextColor(resources.getColor(R.color.text_grey))
             }
         }
-        baseRvAdapter.index = mMainActivity.currentLrcIndex
+        baseRvAdapter.index = mMainActivity.mainViewModel.currentLrcIndex
         linearLayoutManager.scrollToPositionWithOffset(
-            mMainActivity.currentLrcIndex, 100.px.toInt()
+            mMainActivity.mainViewModel.currentLrcIndex, 100.px.toInt()
         )
         binding.rv.adapter = baseRvAdapter
 
@@ -148,7 +146,7 @@ class LrcFragment : BaseFragment() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun judgmentHide() {
-        if (mMainActivity.lrcBeanList.size == 0) {
+        if (mMainActivity.mainViewModel.lrcBeanList.size == 0) {
             binding.rv.visibility = View.GONE
             binding.noData.visibility = View.VISIBLE
         } else {

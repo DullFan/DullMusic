@@ -177,5 +177,19 @@ class ExoPlayerManager constructor(application: Application) {
         return exoPlayer.currentMediaItemIndex
     }
 
+    /**
+     * 获取当前播放列表总数量
+     */
+    fun getMediaItemCount(): Int {
+        return exoPlayer.mediaItemCount
+    }
+
+    /**
+     * 更换播放顺序
+     */
+    fun moveMediaItem(currentIndex: Int, newIndex: Int) {
+        exoPlayer.moveMediaItem(currentIndex, newIndex)
+    }
+
 
 }

@@ -1,14 +1,23 @@
 package com.example.dullmusic.ui.activity.main
 
 import android.app.Application
+import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.provider.MediaStore
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import com.example.base.utils.gson
+import com.example.base.utils.showLog
 import com.example.dullmusic.bean.GsonSongBean
 import com.example.dullmusic.bean.SelectSongBean
 import com.example.dullmusic.bean.Song
+import com.example.dullmusic.lrc.LrcBean
+import com.example.dullmusic.tool.ALL_SONG_PLAY_LIST_STRING
+import com.example.dullmusic.tool.MUSIC_LIST_STRING
+import com.example.dullmusic.tool.SELECT_SONG_PATH
+import com.example.dullmusic.tool.SONG_PLAY_LIST_STRING
+import com.example.media.ExoPlayerService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -32,20 +41,54 @@ class MainViewModel(private val application: Application) : AndroidViewModel(app
      * 当前选中的Bitmap
      */
     var selectBitmap = MutableLiveData<Bitmap>()
+
     /**
      * 是否开启其他Fragment
      */
     var isOtherPages = MutableLiveData(false)
 
     /**
+     *  控制点击刷新后动画、跳转指定歌词不触发
+     */
+    var isOnClickRefresh = false
+
+    /**
+     * 当前选中的歌词
+     */
+    var currentLrcIndex = 0
+
+    /**
+     * 存放歌词集合
+     */
+    var lrcBeanList: MutableList<LrcBean> = mutableListOf()
+
+    lateinit var audioBinder: ExoPlayerService.AudioBinder
+
+    private val sharedPreferences: SharedPreferences by lazy {
+        application.getSharedPreferences("data", AppCompatActivity.MODE_PRIVATE)
+    }
+    val sharedPreferencesEdit: SharedPreferences.Editor by lazy {
+        sharedPreferences.edit()
+    }
+
+    fun getMusicListString() = sharedPreferences.getString(MUSIC_LIST_STRING, "")!!
+    fun getSelectSongPath() = sharedPreferences.getString(SELECT_SONG_PATH, "")!!
+    fun getSongPlayListString() = sharedPreferences.getString(SONG_PLAY_LIST_STRING, "")!!
+    fun getAllSongPlayListString() = sharedPreferences.getString(ALL_SONG_PLAY_LIST_STRING, "")!!
+
+    fun sharedPreferencesEditCommitData(_action: SharedPreferences.Editor.() -> Unit) {
+        _action.invoke(sharedPreferencesEdit)
+        sharedPreferencesEdit.commit()
+    }
+
+    /**
      * 请求媒体库数据
      */
     suspend fun requestMusicSong(
-        musicData: String,
-        musicPlayData: String = "",
-        isRefresh: Boolean = false,
-        action: (dataList: MutableList<Song>) -> Unit = {}
+        isRefresh: Boolean = false
     ) {
+        val musicData = getMusicListString()
+        val musicPlayData = getSongPlayListString()
         //判断数据库是否存在数据，如果不存在则查询本地
         if (musicData.isEmpty() || isRefresh) {
             val cursor = application.contentResolver.query(
@@ -90,22 +133,36 @@ class MainViewModel(private val application: Application) : AndroidViewModel(app
                         //歌曲大小
                         val size =
                             cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.SIZE))
+
                         _musicSongList += Song(0, name, artist, album, data, duration, size)
                     }
                 }
                 withContext(Dispatchers.Main) {
                     _musicSongList.reverse()
-                    musicPlaySongList.value = _musicSongList
+                    if (!isRefresh) {
+                        musicPlaySongList.value = _musicSongList
+                    }
                     musicSongList.value = _musicSongList
+                    if (!isRefresh) {
+                        sharedPreferencesEditCommitData {
+                            putString(
+                                SONG_PLAY_LIST_STRING,
+                                gson.toJson(GsonSongBean(_musicSongList))
+                            )
+                        }
+                    }
 
-                    action.invoke(_musicSongList)
+                    sharedPreferencesEditCommitData {
+                        putString(MUSIC_LIST_STRING, gson.toJson(GsonSongBean(_musicSongList)))
+                    }
                 }
                 cursor.close()
             }
         } else {
             withContext(Dispatchers.Main) {
-                if(musicPlayData != ""){
-                    val songMutableList = gson.fromJson(musicPlayData, GsonSongBean::class.java).musicList
+                if (musicPlayData != "") {
+                    val songMutableList =
+                        gson.fromJson(musicPlayData, GsonSongBean::class.java).musicList
                     musicPlaySongList.value = songMutableList
                 }
                 val fromJson = gson.fromJson(musicData, GsonSongBean::class.java)
@@ -120,9 +177,45 @@ class MainViewModel(private val application: Application) : AndroidViewModel(app
         selectSongBean.value = selectSongData
     }
 
-    fun selectBitmap(
+    fun setSelectBitmap(
         bitmap: Bitmap,
     ) {
         selectBitmap.value = bitmap
+    }
+
+    /**
+     * 通过路径判断当前播放列表下标位置
+     */
+    fun selectIndexMusicPlay(selectSongPath: String?): Int {
+        val index = if (selectSongPath == "") {
+            0
+        } else {
+            var i = 0
+            musicPlaySongList.value?.forEachIndexed { index, song ->
+                if (selectSongPath == song.data) {
+                    i = index
+                }
+            }
+            i
+        }
+        return index
+    }
+
+    /**
+     * 通过路径判断下标
+     */
+    fun selectIndex(selectSongPath: String?): Int {
+        val index = if (selectSongPath == "") {
+            0
+        } else {
+            var i = 0
+            musicSongList.value?.forEachIndexed { index, song ->
+                if (selectSongPath == song.data) {
+                    i = index
+                }
+            }
+            i
+        }
+        return index
     }
 }

@@ -24,9 +24,13 @@ class PlayListFragment : BaseFragment() {
         savedInstanceState: Bundle?
     ): View {
         mMainActivity.mainViewModel.isOtherPages.value = true
-        binding.homeLayout.setOnClickListener {
+        val allSongPlayListString = mMainActivity.mainViewModel.getAllSongPlayListString()
+        
 
-        }
+
+
+
+
 
         return binding.root
     }
