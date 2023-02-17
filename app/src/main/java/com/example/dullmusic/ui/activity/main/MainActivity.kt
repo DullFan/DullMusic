@@ -5,6 +5,7 @@ import android.app.AlertDialog
 import android.content.*
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.ColorDrawable
@@ -12,27 +13,33 @@ import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.*
+import android.text.Editable
+import android.text.TextWatcher
+import android.util.TypedValue
 import android.view.View
 import android.widget.SeekBar
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.WindowCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.SimpleItemAnimator
 import com.example.base.base.BaseActivity
+import com.example.base.base.BaseRvAdapter
 import com.example.base.base.BaseRvAdapterPosition
 import com.example.base.utils.*
 import com.example.dullmusic.R
+import com.example.dullmusic.bean.AllGsonSongBean
 import com.example.dullmusic.bean.GsonSongBean
 import com.example.dullmusic.bean.SelectSongBean
 import com.example.dullmusic.bean.Song
-import com.example.dullmusic.databinding.ActivityMainBinding
-import com.example.dullmusic.databinding.DialogPermissionsLayoutBinding
-import com.example.dullmusic.databinding.DialogPlayListLayoutBinding
-import com.example.dullmusic.databinding.ItemPlayListLayoutBinding
+import com.example.dullmusic.databinding.*
 import com.example.dullmusic.lrc.parseLrcFile
 import com.example.dullmusic.lrc.parseStr2List
 import com.example.dullmusic.tool.*
@@ -44,10 +51,14 @@ import com.google.android.exoplayer2.MediaItem
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
 
 const val MIN_OUT_LAYOUT_TIME = 1000
 var lastOutLayoutTime = 0L
 
+@Suppress("IMPLICIT_CAST_TO_ANY")
 @RequiresApi(Build.VERSION_CODES.O)
 open class MainActivity : BaseActivity() {
     lateinit var binding: ActivityMainBinding
@@ -57,7 +68,6 @@ open class MainActivity : BaseActivity() {
             this, ViewModelProvider.AndroidViewModelFactory.getInstance(application)
         )[MainViewModel::class.java]
     }
-
 
     /**
      * 权限申请对话框
@@ -209,6 +219,7 @@ open class MainActivity : BaseActivity() {
      */
     private fun clickBottomSheetDialog() {
         binding.musicList.setOnClickListener(myOnMultiClickListener {
+            showToast(this, "1")
             if (mainViewModel.musicPlaySongList.value?.size != 0) {
                 val dialogPlayListLayoutBinding =
                     DialogPlayListLayoutBinding.inflate(layoutInflater)
@@ -616,7 +627,6 @@ open class MainActivity : BaseActivity() {
      * MotionLayout监听器
      */
     private fun motionLayoutListener() {
-        binding.contentLayout.setOnClickListener { }
         binding.motionLayout.setTransitionListener(object : MotionLayout.TransitionListener {
             override fun onTransitionStarted(p0: MotionLayout?, p1: Int, p2: Int) {
 
@@ -657,6 +667,415 @@ open class MainActivity : BaseActivity() {
             } else {
                 super.onBackPressed()
             }
+        }
+    }
+
+    /**
+     * 添加歌单对话框
+     */
+    fun showDialogAddSongList(
+        isEdit: Boolean = false,
+        name: String = "",
+        index: Int = 0,
+        _action: (content:String) -> Unit
+    ) {
+        val dialog = AlertDialog.Builder(this).create()
+        dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.window!!.decorView.setBackgroundColor(Color.TRANSPARENT)
+        val dialogAddSongListLayoutBinding =
+            DialogAddSongListLayoutBinding.inflate(layoutInflater)
+        dialog.setView(dialogAddSongListLayoutBinding.root)
+        dialogAddSongListLayoutBinding.editContent.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+
+            }
+
+            override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+
+            }
+
+            override fun afterTextChanged(p0: Editable?) {
+                dialogAddSongListLayoutBinding.dialogDoneButton.isEnabled =
+                    dialogAddSongListLayoutBinding.editContent.text.isNotEmpty()
+            }
+        })
+        if (isEdit) {
+            dialogAddSongListLayoutBinding.editContent.setText(name)
+            dialogAddSongListLayoutBinding.title.text = "编辑"
+        }
+
+        dialogAddSongListLayoutBinding.dialogCloseButton.setOnClickListener(
+            myOnMultiClickListener {
+                dialog.dismiss()
+            })
+
+        dialogAddSongListLayoutBinding.dialogDoneButton.setOnClickListener(
+            myOnMultiClickListener {
+                if (isEdit) {
+                    val fromJson = gson.fromJson(
+                        mainViewModel.getAllSongPlayListString(),
+                        AllGsonSongBean::class.java
+                    )
+                    fromJson.allGsonSongBeanList[index].name =
+                        dialogAddSongListLayoutBinding.editContent.text.toString()
+                    mainViewModel.sharedPreferencesEditCommitData {
+                        putString(
+                            ALL_SONG_PLAY_LIST_STRING,
+                            gson.toJson(fromJson)
+                        )
+                    }
+                } else {
+                    val gsonSongBean = GsonSongBean(
+                        mutableListOf(),
+                        dialogAddSongListLayoutBinding.editContent.text.toString()
+                    )
+                    val allSongPlayListString = mainViewModel.getAllSongPlayListString()
+                    if (allSongPlayListString.isEmpty()) {
+                        mainViewModel.sharedPreferencesEditCommitData {
+                            putString(
+                                ALL_SONG_PLAY_LIST_STRING,
+                                gson.toJson(AllGsonSongBean(mutableListOf(gsonSongBean)))
+                            )
+                        }
+
+                    } else {
+                        val fromJson = gson.fromJson(
+                            mainViewModel.getAllSongPlayListString(),
+                            AllGsonSongBean::class.java
+                        )
+                        fromJson.allGsonSongBeanList.add(gsonSongBean)
+                        mainViewModel.sharedPreferencesEditCommitData {
+                            putString(
+                                ALL_SONG_PLAY_LIST_STRING,
+                                gson.toJson(fromJson)
+                            )
+                        }
+                    }
+                }
+                _action.invoke(dialogAddSongListLayoutBinding.editContent.text.toString())
+                dialog.dismiss()
+            })
+        dialog.show()
+    }
+
+    /**
+     * 列表Adapter
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun setMusicRv(
+        contentRv: RecyclerView,
+        mediaText: TextView,
+        _action: (BaseRvAdapter<Song>) -> Unit
+    ) {
+        // 取消过渡动画
+        (contentRv.itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
+        contentRv.itemAnimator = null
+        mainViewModel.musicSongList.observe(this) { songList ->
+            mediaText.text = "${songList.size} 首歌曲"
+            val songBaseRvAdapter =
+                BaseRvAdapter(songList, R.layout.item_song_layout) { itemData, view, position ->
+                    val itemSongLayoutBinding = ItemSongLayoutBinding.bind(view)
+                    itemSongLayoutBinding.musicTitle.text = itemData.name
+                    itemSongLayoutBinding.musicAuthor.text = itemData.artist
+                    //设置Bitmap
+                    setImageBitmap(itemData, itemSongLayoutBinding, position)
+                    //设置选中的背景颜色
+                    if (index == position) {
+                        val typedValue = TypedValue()
+                        theme.resolveAttribute(
+                            androidx.appcompat.R.attr.colorAccent, typedValue, true
+                        )
+                        itemSongLayoutBinding.musicCard.setCardBackgroundColor(typedValue.data)
+                    } else {
+                        itemSongLayoutBinding.musicCard.setCardBackgroundColor(getColor(R.color.background_color))
+                    }
+
+                    //Item点击事件
+                    itemSongLayoutBinding.root.setOnClickListener(myOnMultiClickListener {
+                        if (fileExists(itemData.data)) {
+                            if (index != position) {
+                                // 判断当前选中的歌曲是否在播放列表中，存在则跳过，不存在则添加
+                                if ((mainViewModel.musicPlaySongList.value?.contains(
+                                        itemData
+                                    ) == false)
+                                ) {
+                                    val currentPosition =
+                                        mainViewModel.audioBinder.getCurrentMediaItemIndex()
+                                    if (currentPosition + 1 == mainViewModel.musicPlaySongList.value!!.size) {
+                                        mainViewModel.audioBinder.addMediaItem(
+                                            MediaItem.fromUri(
+                                                itemData.data
+                                            )
+                                        )
+                                        mainViewModel.musicPlaySongList.value!!.add(
+                                            itemData
+                                        )
+                                    } else {
+                                        mainViewModel.audioBinder.addMediaItem(
+                                            MediaItem.fromUri(
+                                                itemData.data
+                                            ), currentPosition + 1
+                                        )
+                                        mainViewModel.musicPlaySongList.value!!.add(
+                                            currentPosition + 1, itemData
+                                        )
+                                    }
+                                    mainViewModel.sharedPreferencesEditCommitData {
+                                        putString(
+                                            SONG_PLAY_LIST_STRING,
+                                            gson.toJson(GsonSongBean(mainViewModel.musicPlaySongList.value!!))
+                                        )
+                                    }
+                                }
+                                isClickOnTheNextSong = true
+                                index = position
+                                // 开启动画效果
+                                if (!isNotFirstEntry) isNotFirstEntry = true
+                            }
+                        } else {
+                            showToast(this@MainActivity, "找不到此文件,可能文件已经被迁移或被删除")
+                        }
+                    })
+                }
+            _action.invoke(songBaseRvAdapter)
+            val selectSongPath = mainViewModel.getSelectSongPath()
+            songBaseRvAdapter.index = mainViewModel.selectIndex(selectSongPath)
+            mainViewModel.audioBinder.seekIndexNotPlayer(
+                mainViewModel.selectIndexMusicPlay(
+                    selectSongPath
+                )
+            )
+            val linearLayoutManager = LinearLayoutManager(this)
+            contentRv.layoutManager = linearLayoutManager
+            contentRv.adapter = songBaseRvAdapter
+            setEndOfSongListener {
+                isTheNextSongClick = true
+                songBaseRvAdapter.index = it
+            }
+            setPlayListDialogF { path ->
+                songBaseRvAdapter.index = mainViewModel.selectIndex(path)
+            }
+
+            setSeekToNextOnClickListener { selectPosition ->
+                songBaseRvAdapter.index = selectPosition
+            }
+
+            setSeekToPreviousOnClickListener { selectPosition ->
+                songBaseRvAdapter.index = selectPosition
+            }
+        }
+    }
+
+    val defaultAvatar by lazy {
+        resources.getDrawable(R.drawable.default_avatar).toBitmap()
+    }
+
+    /**
+     * 设置Bitmap
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun BaseRvAdapter<Song>.setImageBitmap(
+        oneitemData: Song, itemSongLayoutBinding: ItemSongLayoutBinding, position: Int
+    ) {
+        CoroutineScope(Dispatchers.IO).launch {
+            flow {
+                val bitmap = getAlbumPicture(oneitemData.data)
+                emit(bitmap)
+            }.catch {
+                emit(defaultAvatar)
+            }
+                .collect {
+                    withContext(Dispatchers.Main) {
+                        itemSongLayoutBinding.musicPhotos.setImageBitmap(it)
+                        if (index == position) {
+                            mainViewModel.setSelectBitmap(it ?: defaultAvatar)
+                        }
+                        itemSongLayoutBinding.itemMusicMenu.setOnClickListener(
+                            myOnMultiClickListener {
+                                val dialog = AlertDialog.Builder(this@MainActivity).create()
+                                val dialogView = DialogItemMenuLayoutBinding.inflate(layoutInflater)
+                                dialog.setView(dialogView.root)
+                                dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                                dialog.window!!.decorView.setBackgroundColor(Color.TRANSPARENT)
+                                dialog.show()
+
+                                dialogView.musicTitle.text = oneitemData.name
+                                dialogView.musicAuthor.text = oneitemData.artist
+                                dialogView.musicPhotos.setImageBitmap(it)
+
+                                dialogView.musicAddPlaySong.setOnClickListener(
+                                    myOnMultiClickListener {
+                                        val addSongListDialog =
+                                            AlertDialog.Builder(this@MainActivity).create()
+                                        val dialogAddSongToListLayoutBinding =
+                                            DialogAddSongToListLayoutBinding.inflate(layoutInflater)
+                                        addSongListDialog.window!!.setBackgroundDrawable(
+                                            ColorDrawable(Color.TRANSPARENT)
+                                        )
+                                        addSongListDialog.window!!.decorView.setBackgroundColor(
+                                            Color.TRANSPARENT
+                                        )
+                                        val allGsonSongBean = gson.fromJson(
+                                            mainViewModel.getAllSongPlayListString(),
+                                            AllGsonSongBean::class.java
+                                        )
+
+                                        if (allGsonSongBean != null) {
+                                            val baseAdapter = BaseRvAdapter(
+                                                allGsonSongBean.allGsonSongBeanList.reversed(),
+                                                R.layout.item_song_to_list_layout
+                                            ) { itemData, view, position ->
+                                                val itemSongListLayoutBinding =
+                                                    ItemSongToListLayoutBinding.bind(view)
+                                                CoroutineScope(Dispatchers.IO).launch {
+                                                    val bitmap = if (itemData.musicList.size == 0) {
+                                                        defaultAvatar
+                                                    } else {
+                                                        getAlbumPicture(itemData.musicList[0].data)
+                                                            ?: defaultAvatar
+                                                    }
+                                                    withContext(Dispatchers.Main) {
+                                                        itemSongListLayoutBinding.musicPhotos.setImageBitmap(
+                                                            bitmap
+                                                        )
+                                                    }
+                                                }
+                                                itemSongListLayoutBinding.musicTitle.text =
+                                                    itemData.name
+                                                itemSongListLayoutBinding.musicAuthor.text =
+                                                    "${itemData.musicList.size} 首歌曲"
+                                                itemSongListLayoutBinding.root.setOnClickListener(
+                                                    myOnMultiClickListener {
+                                                        val fromJson = gson.fromJson(
+                                                            mainViewModel.getAllSongPlayListString(),
+                                                            AllGsonSongBean::class.java
+                                                        )
+
+                                                        val musicList =
+                                                            fromJson.allGsonSongBeanList[position].musicList
+                                                        if(!musicList.contains(oneitemData)){
+                                                            fromJson.allGsonSongBeanList[position].musicList.add(
+                                                                oneitemData
+                                                            )
+                                                            mainViewModel.sharedPreferencesEditCommitData {
+                                                                putString(
+                                                                    ALL_SONG_PLAY_LIST_STRING,
+                                                                    gson.toJson(fromJson)
+                                                                )
+                                                            }
+                                                        }
+                                                        showToast(this@MainActivity, "已添加到歌单")
+                                                        addSongListDialog.dismiss()
+                                                        dialog.dismiss()
+                                                    })
+                                            }
+
+                                            dialogAddSongToListLayoutBinding.rv.adapter =
+                                                baseAdapter
+
+                                        }
+                                        dialogAddSongToListLayoutBinding.dialogButton.setOnClickListener(
+                                            myOnMultiClickListener {
+                                                showDialogAddSongList {
+                                                    if (allGsonSongBean != null) {
+                                                        (dialogAddSongToListLayoutBinding.rv.adapter as BaseRvAdapter<GsonSongBean>).dataList =
+                                                            gson.fromJson(
+                                                                mainViewModel.getAllSongPlayListString(),
+                                                                AllGsonSongBean::class.java
+                                                            ).allGsonSongBeanList
+                                                    }
+                                                }
+                                            })
+                                        addSongListDialog.setView(dialogAddSongToListLayoutBinding.root)
+                                        addSongListDialog.show()
+                                    })
+
+                                dialogView.musicNextSong.setOnClickListener(myOnMultiClickListener {
+                                    val currentPosition =
+                                        mainViewModel.audioBinder.getCurrentMediaItemIndex()
+                                    if ((mainViewModel.musicPlaySongList.value?.contains(
+                                            oneitemData
+                                        ) == false)
+                                    ) {
+                                        // 不存在
+                                        if (currentPosition + 1 == mainViewModel.musicPlaySongList.value!!.size) {
+                                            mainViewModel.audioBinder.addMediaItem(
+                                                MediaItem.fromUri(
+                                                    oneitemData.data
+                                                )
+                                            )
+                                            mainViewModel.musicPlaySongList.value!!.add(
+                                                oneitemData
+                                            )
+                                        } else {
+                                            mainViewModel.audioBinder.addMediaItem(
+                                                MediaItem.fromUri(
+                                                    oneitemData.data
+                                                ), currentPosition + 1
+                                            )
+                                            mainViewModel.musicPlaySongList.value!!.add(
+                                                currentPosition + 1, oneitemData
+                                            )
+                                        }
+                                    } else {
+                                        //存在
+                                        if (currentPosition + 1 == mainViewModel.musicPlaySongList.value!!.size) {
+                                            mainViewModel.audioBinder.moveMediaItem(
+                                                mainViewModel.selectIndexMusicPlay(oneitemData.data),
+                                                mainViewModel.musicPlaySongList.value!!.size
+                                            )
+                                            mainViewModel.musicPlaySongList.value!!.remove(
+                                                oneitemData
+                                            )
+                                            mainViewModel.musicPlaySongList.value!!.add(oneitemData)
+                                        } else {
+                                            mainViewModel.audioBinder.moveMediaItem(
+                                                mainViewModel.selectIndexMusicPlay(oneitemData.data),
+                                                currentPosition
+                                            )
+                                            mainViewModel.musicPlaySongList.value!!.remove(
+                                                oneitemData
+                                            )
+                                            mainViewModel.musicPlaySongList.value!!.add(
+                                                currentPosition,
+                                                oneitemData
+                                            )
+                                        }
+                                    }
+                                    mainViewModel.sharedPreferencesEditCommitData {
+                                        putString(
+                                            SONG_PLAY_LIST_STRING,
+                                            gson.toJson(GsonSongBean(mainViewModel.musicPlaySongList.value!!))
+                                        )
+                                    }
+                                    dialog.dismiss()
+                                })
+                            })
+                    }
+                }
+        }
+
+        if (index == position) {
+            mainViewModel.sharedPreferencesEditCommitData {
+                putString(SELECT_SONG_PATH, oneitemData.data)
+            }
+            selectedEvents(position, oneitemData)
+        }
+    }
+
+    /**
+     * 选中事件
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun BaseRvAdapter<Song>.selectedEvents(
+        position: Int, itemData: Song
+    ) {
+        if (index == position) {
+            mainViewModel.setSelectSong(
+                SelectSongBean(
+                    itemData, position
+                )
+            )
         }
     }
 }

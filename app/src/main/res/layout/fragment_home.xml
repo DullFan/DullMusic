@@ -1,125 +1,135 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/home_layout"
+    android:fillViewport="true"
+    android:scrollbars="none"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/content_app_name"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="20dp"
-        android:layout_marginTop="60dp"
-        android:text="@string/app_name"
-        android:textColor="@color/black"
-        android:textSize="30sp"
-        android:textStyle="bold"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <androidx.constraintlayout.utils.widget.ImageFilterView
-        android:id="@+id/music_refresh"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
-        android:layout_marginEnd="20dp"
-        android:src="@drawable/icon_music_refresh"
-        app:layout_constraintBottom_toBottomOf="@+id/content_app_name"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/content_app_name"
-        app:tint="@color/icon_back_color" />
-
-    <androidx.constraintlayout.utils.widget.ImageFilterView
-        android:id="@+id/music_setting"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
-        android:layout_marginEnd="20dp"
-        android:src="@drawable/icon_setting"
-        app:layout_constraintBottom_toBottomOf="@+id/content_app_name"
-        app:layout_constraintRight_toLeftOf="@+id/music_refresh"
-        app:layout_constraintTop_toTopOf="@+id/content_app_name"
-        app:tint="@color/icon_back_color" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/content_entry_rv"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/home_layout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="20dp"
-        android:layout_marginTop="20dp"
-        android:orientation="horizontal"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        app:layout_constraintTop_toBottomOf="@+id/content_app_name" />
+        android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/media_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="0 首歌曲"
-        android:layout_marginHorizontal="20dp"
-        android:layout_marginTop="20dp"
-        android:textColor="@color/black"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/content_entry_rv"
-        android:textSize="17sp"
-        android:textStyle="bold" />
+        <TextView
+            android:id="@+id/content_app_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="60dp"
+            android:text="@string/app_name"
+            android:textColor="@color/black"
+            android:textSize="30sp"
+            android:textStyle="bold"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.constraintlayout.utils.widget.ImageFilterView
+            android:id="@+id/music_refresh"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginEnd="20dp"
+            android:src="@drawable/icon_music_refresh"
+            app:layout_constraintBottom_toBottomOf="@+id/content_app_name"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/content_app_name"
+            app:tint="@color/icon_back_color" />
+
+        <androidx.constraintlayout.utils.widget.ImageFilterView
+            android:id="@+id/music_setting"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginEnd="20dp"
+            android:src="@drawable/icon_setting"
+            app:layout_constraintBottom_toBottomOf="@+id/content_app_name"
+            app:layout_constraintRight_toLeftOf="@+id/music_refresh"
+            app:layout_constraintTop_toTopOf="@+id/content_app_name"
+            app:tint="@color/icon_back_color" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/content_entry_rv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            app:layout_constraintTop_toBottomOf="@+id/content_app_name" />
+
+        <TextView
+            android:id="@+id/media_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0 首歌曲"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="20dp"
+            android:textColor="@color/black"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/content_entry_rv"
+            android:textSize="17sp"
+            android:textStyle="bold" />
 
 
-    <androidx.constraintlayout.utils.widget.ImageFilterView
-        android:id="@+id/content_play"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_marginEnd="20dp"
-        android:scaleType="centerCrop"
-        android:padding="1dp"
-        android:src="@drawable/icon_play_in_list"
-        app:layout_constraintBottom_toBottomOf="@+id/media_text"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/media_text"
-        app:tint="@color/icon_back_color" />
+        <androidx.constraintlayout.utils.widget.ImageFilterView
+            android:id="@+id/content_play"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginEnd="20dp"
+            android:scaleType="centerCrop"
+            android:padding="1dp"
+            android:src="@drawable/icon_play_in_list"
+            app:layout_constraintBottom_toBottomOf="@+id/media_text"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/media_text"
+            app:tint="@color/icon_back_color" />
 
-    <androidx.constraintlayout.utils.widget.ImageFilterView
-        android:id="@+id/content_multiple_choice"
-        android:layout_width="21dp"
-        android:layout_marginEnd="20dp"
-        android:layout_height="21dp"
-        android:src="@drawable/icon_music_multiple_choice"
-        app:layout_constraintBottom_toBottomOf="@+id/media_text"
-        app:layout_constraintRight_toLeftOf="@+id/content_play"
-        app:layout_constraintTop_toTopOf="@+id/media_text"
-        app:tint="@color/icon_back_color" />
+        <androidx.constraintlayout.utils.widget.ImageFilterView
+            android:id="@+id/content_multiple_choice"
+            android:layout_width="21dp"
+            android:layout_marginEnd="20dp"
+            android:layout_height="21dp"
+            android:src="@drawable/icon_music_multiple_choice"
+            app:layout_constraintBottom_toBottomOf="@+id/media_text"
+            app:layout_constraintRight_toLeftOf="@+id/content_play"
+            app:layout_constraintTop_toTopOf="@+id/media_text"
+            app:tint="@color/icon_back_color" />
 
 
-    <androidx.constraintlayout.utils.widget.ImageFilterView
-        android:id="@+id/content_sort"
-        android:layout_width="21dp"
-        android:layout_height="21dp"
-        android:layout_marginEnd="20dp"
-        android:src="@drawable/icon_music_sort"
-        app:layout_constraintBottom_toBottomOf="@+id/media_text"
-        app:layout_constraintRight_toLeftOf="@+id/content_multiple_choice"
-        app:layout_constraintTop_toTopOf="@+id/media_text"
-        app:tint="@color/icon_back_color" />
+        <androidx.constraintlayout.utils.widget.ImageFilterView
+            android:id="@+id/content_sort"
+            android:layout_width="21dp"
+            android:layout_height="21dp"
+            android:layout_marginEnd="20dp"
+            android:src="@drawable/icon_music_sort"
+            app:layout_constraintBottom_toBottomOf="@+id/media_text"
+            app:layout_constraintRight_toLeftOf="@+id/content_multiple_choice"
+            app:layout_constraintTop_toTopOf="@+id/media_text"
+            app:tint="@color/icon_back_color" />
 
-    <View
-        app:layout_constraintBottom_toTopOf="@id/media_text"
-        android:background="@color/background_grey_color"
-        android:layout_marginBottom="8dp"
-        android:layout_width="match_parent"
-        android:layout_height="1dp"/>
+        <View
+            app:layout_constraintBottom_toTopOf="@id/media_text"
+            android:background="@color/background_grey_color"
+            android:layout_marginBottom="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"/>
 
-    <View
-        app:layout_constraintTop_toBottomOf="@id/media_text"
-        android:background="@color/background_grey_color"
-        android:layout_width="match_parent"
-        android:layout_marginTop="8dp"
-        android:layout_height="1dp"/>
+        <View
+            app:layout_constraintTop_toBottomOf="@id/media_text"
+            android:background="@color/background_grey_color"
+            android:layout_width="match_parent"
+            android:layout_marginTop="8dp"
+            android:layout_height="1dp"/>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/content_rv"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:paddingBottom="40dp"
-        app:layout_constraintTop_toBottomOf="@+id/media_text" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/content_rv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:paddingBottom="40dp"
+            app:layout_constraintTop_toBottomOf="@+id/media_text" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+</androidx.core.widget.NestedScrollView>

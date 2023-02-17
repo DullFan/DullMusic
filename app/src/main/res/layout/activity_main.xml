@@ -7,29 +7,20 @@
     tools:context=".ui.activity.main.MainActivity">
 
     <androidx.constraintlayout.motion.widget.MotionLayout
-        android:visibility="visible"
         android:id="@+id/motion_layout"
         android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:background="@color/background_color"
+        android:visibility="visible"
+        app:layoutDescription="@xml/activity_main_scene">
 
-        app:layoutDescription="@xml/activity_main_scene"
-        android:layout_height="match_parent">
 
-        <androidx.core.widget.NestedScrollView
-            android:id="@+id/content_layout"
+        <FrameLayout
+            android:id="@+id/content_fragment"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:fillViewport="true"
-            android:scrollbars="none"
             app:layout_constraintBottom_toTopOf="@+id/material_card_view"
-            app:layout_constraintTop_toTopOf="parent">
-
-            <FrameLayout
-                android:id="@+id/content_fragment"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-        </androidx.core.widget.NestedScrollView>
+            app:layout_constraintTop_toTopOf="parent" />
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/material_card_view"
@@ -101,10 +92,10 @@
             android:layout_marginStart="10dp"
             android:alpha="0"
             android:ellipsize="marquee"
-            android:marqueeRepeatLimit="marquee_forever"
-            android:singleLine="true"
             android:focusableInTouchMode="true"
+            android:marqueeRepeatLimit="marquee_forever"
             android:paddingEnd="70dp"
+            android:singleLine="true"
             android:text="DullMusic"
             android:textSize="25sp"
             android:textStyle="bold"
@@ -171,17 +162,17 @@
             android:alpha="0"
             android:background="@color/white"
             android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toLeftOf="@id/material_card_play_view"
-            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toBottomOf="@id/music_seekbar" />
 
         <androidx.constraintlayout.utils.widget.ImageFilterView
             android:id="@+id/music_play_pause"
             android:layout_width="35dp"
             android:layout_height="35dp"
-            android:tag="pause"
             android:src="@drawable/icon_pause_anim"
+            android:tag="pause"
             app:layout_constraintBottom_toBottomOf="@+id/material_card_play_view"
             app:layout_constraintLeft_toLeftOf="@+id/material_card_play_view"
             app:layout_constraintRight_toRightOf="@+id/material_card_play_view"
@@ -240,8 +231,8 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:gravity="center"
-            android:text="暂无歌词"
             android:paddingHorizontal="20dp"
+            android:text="暂无歌词"
             android:textSize="18sp"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="@id/guideline05"
@@ -335,9 +326,9 @@
 
     <FrameLayout
         android:id="@+id/fragment"
-        android:visibility="gone"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:visibility="gone" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
