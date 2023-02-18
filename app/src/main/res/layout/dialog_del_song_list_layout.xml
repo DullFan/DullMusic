@@ -24,8 +24,8 @@
                 android:id="@+id/title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="创建一个新的歌单"
-                android:textSize="17sp"
+                android:text="提示"
+                android:textSize="25sp"
                 android:textStyle="bold" />
 
             <EditText
@@ -33,11 +33,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:singleLine="true"
-                android:layout_marginTop="30dp"
+                android:layout_marginTop="20dp"
                 android:background="@android:color/transparent"
-                android:hint="输入标题"
+                android:hint="删除后无法还原!!!!"
                 android:textColor="@color/black"
-                android:textSize="25sp" />
+                android:textSize="17sp" />
 
             <LinearLayout
                 android:layout_gravity="right"
@@ -49,10 +49,8 @@
                     android:id="@+id/dialog_close_button"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="30dp"
+                    android:layout_marginTop="20dp"
                     android:layout_marginRight="10dp"
-                    android:drawableLeft="@drawable/close_black_24dp"
-                    android:drawableTint="@color/text_grey_8a"
                     android:insetTop="2dp"
                     android:insetBottom="2dp"
                     android:text="取消"
@@ -66,13 +64,10 @@
                     android:id="@+id/dialog_done_button"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="30dp"
-                    android:drawableLeft="@drawable/icon_done_black_24dp"
-                    android:drawableTint="@color/white"
+                    android:layout_marginTop="20dp"
                     android:insetTop="2dp"
                     android:insetBottom="2dp"
                     android:text="确定"
-                    android:enabled="false"
                     android:textSize="18sp"
                     app:cornerRadius="25dp" />
 

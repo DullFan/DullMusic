@@ -24,7 +24,7 @@ class ArtistFragment : BaseFragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         mMainActivity.mainViewModel.isOtherPages.value = true
         binding.rootLayout.setOnClickListener {  }
         return binding.root

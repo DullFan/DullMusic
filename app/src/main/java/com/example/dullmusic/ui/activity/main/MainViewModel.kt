@@ -5,10 +5,12 @@ import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.provider.MediaStore
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import com.example.base.utils.gson
 import com.example.base.utils.showLog
+import com.example.dullmusic.R
 import com.example.dullmusic.bean.GsonSongBean
 import com.example.dullmusic.bean.SelectSongBean
 import com.example.dullmusic.bean.Song
@@ -31,6 +33,20 @@ class MainViewModel(private val application: Application) : AndroidViewModel(app
      * 播放列表
      */
     var musicPlaySongList = MutableLiveData<MutableList<Song>>()
+
+    /**
+     * 选中的列表
+     */
+    var selectMusicSongBeanList:GsonSongBean = GsonSongBean(mutableListOf(),"")
+
+    /**
+     * 选中的列表Position
+     */
+    var selectMusicSongBeanListPosition = 0
+
+    val defaultAvatar by lazy {
+        application.resources.getDrawable(R.drawable.default_avatar).toBitmap()
+    }
 
     /**
      * 当前选中的歌曲
@@ -61,6 +77,11 @@ class MainViewModel(private val application: Application) : AndroidViewModel(app
      * 存放歌词集合
      */
     var lrcBeanList: MutableList<LrcBean> = mutableListOf()
+
+    /**
+     * 歌单详情和歌单列表中的显示文字
+     */
+    var playListSongNumberString = MutableLiveData<String>()
 
     lateinit var audioBinder: ExoPlayerService.AudioBinder
 

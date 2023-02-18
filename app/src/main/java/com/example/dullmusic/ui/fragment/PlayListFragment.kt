@@ -11,15 +11,13 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.core.widget.addTextChangedListener
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.base.base.BaseFragment
 import com.example.base.base.BaseRvAdapter
-import com.example.base.utils.getAlbumPicture
-import com.example.base.utils.gson
-import com.example.base.utils.myOnMultiClickListener
-import com.example.base.utils.showLog
+import com.example.base.utils.*
 import com.example.dullmusic.R
 import com.example.dullmusic.bean.AllGsonSongBean
 import com.example.dullmusic.bean.GsonSongBean
@@ -47,57 +45,66 @@ class PlayListFragment : BaseFragment() {
         savedInstanceState: Bundle?
     ): View {
         mMainActivity.mainViewModel.isOtherPages.value = true
-        initRv()
 
         binding.mediaListAdd.setOnClickListener(myOnMultiClickListener {
-            mMainActivity.showDialogAddSongList{
+            mMainActivity.showDialogAddSongList {
                 initRv()
             }
         })
-
+        mMainActivity.mainViewModel.playListSongNumberString.observe(this){
+            binding.mediaText.text = it
+        }
+        initRv()
 
         return binding.root
     }
 
-    lateinit var baseAdapter: BaseRvAdapter<GsonSongBean>
+    companion object {
+        lateinit var playListBaseAdapter: BaseRvAdapter<GsonSongBean>
+    }
+
     @RequiresApi(Build.VERSION_CODES.O)
-    private fun initRv() {
+    fun initRv() {
         val allSongPlayListString = mMainActivity.mainViewModel.getAllSongPlayListString()
         if (allSongPlayListString.isNotEmpty()) {
             val allGsonSongBean = gson.fromJson(allSongPlayListString, AllGsonSongBean::class.java)
-            binding.mediaText.text = "${allGsonSongBean.allGsonSongBeanList.size} 个歌单"
             val linearLayoutManager = LinearLayoutManager(requireContext())
+            mMainActivity.mainViewModel.playListSongNumberString.value = "${allGsonSongBean.allGsonSongBeanList.size} 个歌单"
+
             binding.mediaListRv.layoutManager = linearLayoutManager
-            if(!::baseAdapter.isInitialized){
-                baseAdapter = BaseRvAdapter(
-                    allGsonSongBean.allGsonSongBeanList.reversed(),
-                    R.layout.item_song_list_layout
-                ) { itemData, view, position ->
-                    val itemSongListLayoutBinding = ItemSongListLayoutBinding.bind(view)
-                    CoroutineScope(Dispatchers.IO).launch {
-                        val bitmap = if (itemData.musicList.size == 0) {
-                            mMainActivity.defaultAvatar
-                        } else {
-                            getAlbumPicture(itemData.musicList[0].data) ?: mMainActivity.defaultAvatar
-                        }
-                        withContext(Dispatchers.Main) {
-                            itemSongListLayoutBinding.musicPhotos.setImageBitmap(bitmap)
-                        }
+            playListBaseAdapter = BaseRvAdapter(
+                allGsonSongBean.allGsonSongBeanList.reversed(),
+                R.layout.item_song_list_layout
+            ) { itemData, view, position ->
+                val itemSongListLayoutBinding = ItemSongListLayoutBinding.bind(view)
+                showLog("数据")
+                CoroutineScope(Dispatchers.IO).launch {
+                    val bitmap = if (itemData.musicList.size == 0) {
+                        mMainActivity.mainViewModel.defaultAvatar
+                    } else {
+                        getAlbumPicture(itemData.musicList[0].data)
+                            ?: mMainActivity.mainViewModel.defaultAvatar
                     }
-                    itemSongListLayoutBinding.musicTitle.text = itemData.name
-                    itemSongListLayoutBinding.musicAuthor.text = "${itemData.musicList.size} 首歌曲"
-                    itemSongListLayoutBinding.itemMusicEdit.setOnClickListener(myOnMultiClickListener {
-                        mMainActivity.showDialogAddSongList(true,itemData.name,position) {
-                            itemSongListLayoutBinding.musicTitle.text = it
-                        }
-                    })
+                    withContext(Dispatchers.Main) {
+                        itemSongListLayoutBinding.musicPhotos.setImageBitmap(bitmap)
+                    }
                 }
-                binding.mediaListRv.adapter = baseAdapter
-            }else{
-                baseAdapter.dataList = allGsonSongBean.allGsonSongBeanList
+                itemSongListLayoutBinding.root.setOnClickListener(myOnMultiClickListener {
+                    mMainActivity.mainViewModel.selectMusicSongBeanList = itemData
+                    mMainActivity.mainViewModel.selectMusicSongBeanListPosition = position
+                    mMainActivity.startSongListDetailsFragment()
+                })
+                itemSongListLayoutBinding.musicTitle.text = itemData.name
+                itemSongListLayoutBinding.musicAuthor.text = "${itemData.musicList.size} 首歌曲"
+                itemSongListLayoutBinding.itemMusicEdit.setOnClickListener(myOnMultiClickListener {
+                    mMainActivity.showDialogAddSongList(true, itemData.name, position) {
+                        itemSongListLayoutBinding.musicTitle.text = it
+                    }
+                })
             }
+            binding.mediaListRv.adapter = playListBaseAdapter
         } else {
-            binding.mediaText.text = "0 个歌单"
+            mMainActivity.mainViewModel.playListSongNumberString.value = "0 个歌单"
         }
     }
 

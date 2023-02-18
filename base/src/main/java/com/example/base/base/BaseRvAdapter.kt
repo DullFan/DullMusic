@@ -17,7 +17,7 @@ class BaseRvAdapter<T>(
         set(value) {
             notifyItemChanged(field)
             field = value
-            notifyItemChanged(index)
+            notifyItemChanged(field)
         }
     var dataList = _dataList
         set(value) {

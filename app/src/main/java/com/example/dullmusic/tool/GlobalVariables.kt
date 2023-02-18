@@ -1,5 +1,7 @@
 package com.example.dullmusic.tool
 
+import com.example.dullmusic.ui.fragment.HomeFragment
+
 /**
  * 存放全局变量
  */
@@ -40,6 +42,8 @@ const val SONG_PLAY_LIST_STRING = "SongPlayListString"
 const val ALL_SONG_PLAY_LIST_STRING = "AllSongPlayListString"
 
 /**
- *
+ * Fragment 名字
  */
+const val HomeFragmentName = "HomeFragmentName"
+const val SongListDetailsFragmentName = "SongListDetailsFragmentName"
 
