@@ -47,7 +47,7 @@ class LrcFragment : BaseFragment() {
     ): View {
         linearLayoutManager = MyLinearLayoutManager(requireContext())
         mMainActivity.setMainLrcHandlerF {
-            val currentPosition = mMainActivity.mainViewModel.audioBinder.getCurrentPosition()
+            val currentPosition = mMainActivity.audioBinder.getCurrentPosition()
             if (::baseRvAdapter.isInitialized) {
                 mMainActivity.mainViewModel.lrcBeanList.forEachIndexed { index, lrcBean ->
                     if (currentPosition >= lrcBean.start && index != baseRvAdapter.index) {
@@ -99,8 +99,8 @@ class LrcFragment : BaseFragment() {
             }
 
             itemLrcRvLayoutBinding.itemLayout.setOnClickListener(myOnMultiClickListener {
-                mMainActivity.mainViewModel.audioBinder.seekTo(itemData.start)
-                if (!mMainActivity.mainViewModel.audioBinder.mediaIsPlaying()) {
+                mMainActivity.audioBinder.seekTo(itemData.start)
+                if (!mMainActivity.audioBinder.mediaIsPlaying()) {
                     mMainActivity.playMusic()
                 }
                 index = position

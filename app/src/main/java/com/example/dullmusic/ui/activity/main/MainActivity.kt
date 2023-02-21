@@ -62,8 +62,6 @@ var lastOutLayoutTime = 0L
 open class MainActivity : BaseActivity() {
     lateinit var binding: ActivityMainBinding
 
-
-
     val mainViewModel by lazy {
         ViewModelProvider(
             this, ViewModelProvider.AndroidViewModelFactory.getInstance(application)
@@ -74,6 +72,8 @@ open class MainActivity : BaseActivity() {
      * 权限申请对话框
      */
     lateinit var permissionsDialog: AlertDialog
+
+    lateinit var audioBinder: ExoPlayerService.AudioBinder
 
     /**
      * 权限申请
@@ -88,25 +88,6 @@ open class MainActivity : BaseActivity() {
     private val permissions = arrayOf(
         Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE
     )
-
-    /**
-     * 歌曲进度监听Handler
-     */
-    private val progressHandler: Handler = object : Handler(Looper.myLooper()!!) {
-        override fun handleMessage(msg: Message) {
-            if (binding.musicPlayPause.tag == "play") {
-                val currentPosition = mainViewModel.audioBinder.getCurrentPosition().toInt()
-                binding.musicSeekbar.progress =
-                    mainViewModel.audioBinder.getCurrentPosition().toInt()
-                binding.musicSeekbarStartTime.text = convertComponentSeconds(currentPosition)
-                lrcSet(currentPosition)
-                if (::mainLrcHandler.isInitialized && binding.fragment.visibility == View.VISIBLE) {
-                    mainLrcHandler.onMainHandlerListener()
-                }
-            }
-            sendEmptyMessageDelayed(1, 500)
-        }
-    }
 
     lateinit var mainLrcEndOfSong: MainLrcEndOfSong
     lateinit var mainLrcHandler: MainLrcHandler
@@ -176,7 +157,7 @@ open class MainActivity : BaseActivity() {
             })
             setAcceptsDelayedFocusGain(true)
             setOnAudioFocusChangeListener { focusChange ->
-                mainViewModel.audioBinder.stopMediaPlayerNoJudgment()
+                audioBinder.stopMediaPlayerNoJudgment()
                 binding.musicPlayPause.tag = "pause"
                 binding.musicPlayPause.setImageResource(R.drawable.icon_pause)
             }
@@ -273,7 +254,7 @@ open class MainActivity : BaseActivity() {
                                 SONG_PLAY_LIST_STRING, gson.toJson(GsonSongBean(value))
                             )
                         }
-                        mainViewModel.audioBinder.removeMediaItem(selectIndexMusicPlay)
+                        audioBinder.removeMediaItem(selectIndexMusicPlay)
                         if (position < index) {
                             index -= 1
                         }
@@ -310,11 +291,28 @@ open class MainActivity : BaseActivity() {
             it.forEach {
                 mediaItems += MediaItem.fromUri(it.data)
             }
-            mainViewModel.audioBinder.setMediaItems(mediaItems)
+            audioBinder.setMediaItems(mediaItems)
         }
 
         // 启动Handler
-        progressHandler.sendEmptyMessageDelayed(1, 500)
+        CoroutineScope(Dispatchers.IO).launch {
+            while (true) {
+                delay(500)
+                if (binding.musicPlayPause.tag == "play") {
+                    withContext(Dispatchers.Main) {
+                        val currentPosition = audioBinder.getCurrentPosition().toInt()
+                        binding.musicSeekbar.progress =
+                            audioBinder.getCurrentPosition().toInt()
+                        binding.musicSeekbarStartTime.text =
+                            convertComponentSeconds(currentPosition)
+                        lrcSet(currentPosition)
+                        if (::mainLrcHandler.isInitialized && binding.fragment.visibility == View.VISIBLE) {
+                            mainLrcHandler.onMainHandlerListener()
+                        }
+                    }
+                }
+            }
+        }
         /**
          * 选中歌触发
          */
@@ -357,7 +355,7 @@ open class MainActivity : BaseActivity() {
                     audioManager.requestAudioFocus(focusRequest)
                     //进行播放歌曲
                     if (isNotFirstEntry && isClickOnTheNextSong) {
-                        mainViewModel.audioBinder.seekIndex(
+                        audioBinder.seekIndex(
                             mainViewModel.selectIndexMusicPlay(
                                 it.song.data
                             )
@@ -399,9 +397,9 @@ open class MainActivity : BaseActivity() {
             }
 
             override fun onStopTrackingTouch(p0: SeekBar) {
-                mainViewModel.audioBinder.seekTo(p0.progress.toLong())
+                audioBinder.seekTo(p0.progress.toLong())
                 binding.musicSeekbarStartTime.text =
-                    convertComponentSeconds(mainViewModel.audioBinder.getCurrentPosition().toInt())
+                    convertComponentSeconds(audioBinder.getCurrentPosition().toInt())
                 isTheStateSuspended()
             }
         })
@@ -443,8 +441,7 @@ open class MainActivity : BaseActivity() {
     fun playMusic() {
         binding.musicPlayPause.tag = "play"
         binding.musicPlayPause.setImageResource(R.drawable.icon_play)
-        mainViewModel.audioBinder.playerMedia()
-        progressHandler.sendEmptyMessageDelayed(1, 500)
+        audioBinder.playerMedia()
     }
 
     private fun setTitleAuthorText(it: SelectSongBean) {
@@ -467,7 +464,7 @@ open class MainActivity : BaseActivity() {
                 songMutableList[selectIndex + 1].data
             }
             action.invoke(mainViewModel.selectIndex(data))
-            mainViewModel.audioBinder.seekToNext()
+            audioBinder.seekToNext()
         })
     }
 
@@ -484,23 +481,23 @@ open class MainActivity : BaseActivity() {
                 songMutableList!![selectIndex - 1].data
             }
             action.invoke(mainViewModel.selectIndex(data))
-            mainViewModel.audioBinder.seekToPrevious()
+            audioBinder.seekToPrevious()
         })
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun isTheStateSuspended() {
-        if (!mainViewModel.audioBinder.mediaIsPlaying()) {
+        if (!audioBinder.mediaIsPlaying()) {
             if (binding.musicPlayPause.tag == "pause") {
                 mediaPlayerPause()
             } else {
-                mainViewModel.audioBinder.playerMedia()
+                audioBinder.playerMedia()
             }
         }
     }
 
     fun setEndOfSongListener(callback: (currentPosition: Int) -> Unit) {
-        mainViewModel.audioBinder.setEndOfSong(object : ExoPlayerManager.EndOfSongFan {
+        audioBinder.setEndOfSong(object : ExoPlayerManager.EndOfSongFan {
             override fun onEndOfSongPlayListener(currentPosition: Int) {
                 isClickOnTheNextSong = false
                 isTheNextSongClick = true
@@ -513,14 +510,14 @@ open class MainActivity : BaseActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     private fun mediaPlayerPause() {
         if (!isNotFirstEntry) isNotFirstEntry = true
-        if (mainViewModel.audioBinder.mediaIsPlaying()) {
+        if (audioBinder.mediaIsPlaying()) {
             binding.musicPlayPause.tag = "pause"
             binding.musicPlayPause.setImageResource(R.drawable.icon_play_anim)
-            mainViewModel.audioBinder.stopMediaPlayer()
+            audioBinder.stopMediaPlayer()
         } else {
             binding.musicPlayPause.tag = "play"
             binding.musicPlayPause.setImageResource(R.drawable.icon_pause_anim)
-            mainViewModel.audioBinder.playerMedia()
+            audioBinder.playerMedia()
         }
         ((binding.musicPlayPause.drawable) as Animatable).start()
     }
@@ -529,10 +526,17 @@ open class MainActivity : BaseActivity() {
      * 绑定Service
      */
     private fun bindExoPlayerService() {
+        IBinder.DeathRecipient {
+
+        }
+
+
+
+
         val connection = object : ServiceConnection {
             override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
                 if (p1 != null) {
-                    mainViewModel.audioBinder = p1 as ExoPlayerService.AudioBinder
+                    audioBinder = p1 as ExoPlayerService.AudioBinder
                     startHomeFragment()
                     startSetting()
                     motionLayoutListener()
@@ -585,6 +589,15 @@ open class MainActivity : BaseActivity() {
         binding.motionLayout.visibility = View.INVISIBLE
         binding.otherPagesFragment.visibility = View.VISIBLE
         addFragment(binding.otherPagesFragment.id, SongListDetailsFragment())
+    }
+
+    /**
+     * 跳转通用播放列表
+     */
+    fun startMediaListDetailsFragment() {
+        binding.motionLayout.visibility = View.INVISIBLE
+        binding.otherPagesFragment.visibility = View.VISIBLE
+        addFragment(binding.otherPagesFragment.id, MediaListDetailsFragment())
     }
 
 
@@ -669,7 +682,7 @@ open class MainActivity : BaseActivity() {
         } else if (motionLayoutIsExpand) {
             motionLayoutIsExpand = false
             binding.motionLayout.transitionToStart()
-        } else if (SongListDetailsFragment.songListDetailsIsShow) {
+        } else if (SongListDetailsFragment.songListDetailsIsShow || MediaListDetailsFragment.mediaListDetailsIsShow) {
             supportFragmentManager.popBackStack()
         } else if (binding.otherPagesFragment.visibility == View.VISIBLE) {
             binding.motionLayout.visibility = View.VISIBLE

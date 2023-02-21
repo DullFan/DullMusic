@@ -17,6 +17,7 @@ class SettingActivity : BaseActivity() {
     private var playSpeed = 0
     private var playTimer = 0
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)

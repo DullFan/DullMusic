@@ -6,35 +6,41 @@ import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
 import android.util.TypedValue
+import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.SimpleItemAnimator
 import com.example.base.base.BaseFragment
 import com.example.base.base.BaseRvAdapter
 import com.example.base.utils.*
 import com.example.dullmusic.R
-import com.example.dullmusic.R.color
-import com.example.dullmusic.bean.*
+import com.example.dullmusic.bean.AllGsonSongBean
+import com.example.dullmusic.bean.GsonSongBean
+import com.example.dullmusic.bean.SelectSongBean
+import com.example.dullmusic.bean.Song
 import com.example.dullmusic.databinding.*
-import com.example.dullmusic.tool.*
+import com.example.dullmusic.tool.ALL_SONG_PLAY_LIST_STRING
+import com.example.dullmusic.tool.SELECT_SONG_PATH
+import com.example.dullmusic.tool.SONG_PLAY_LIST_STRING
+import com.example.dullmusic.tool.isClickOnTheNextSong
 import com.example.dullmusic.ui.activity.main.MainActivity
 import com.google.android.exoplayer2.MediaItem
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
+/**
+ * 通用列表媒体详情页
+ */
 @RequiresApi(Build.VERSION_CODES.O)
-class HomeFragment : BaseFragment() {
-    private val binding by lazy {
-        FragmentHomeBinding.inflate(layoutInflater)
-    }
-
-    companion object {
-        lateinit var songBaseRvAdapter: BaseRvAdapter<Song>
+class MediaListDetailsFragment : BaseFragment() {
+    val binding by lazy {
+        FragmentMediaListDetailsBinding.inflate(layoutInflater)
     }
 
     private val mMainActivity by lazy {
@@ -45,190 +51,137 @@ class HomeFragment : BaseFragment() {
         mMainActivity.mainViewModel
     }
 
+    companion object {
+        var mediaListDetailsIsShow = false
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaListDetailsIsShow = false
+    }
+
+    val selectMusicSongBeanList by lazy {
+        mMainActivity.mainViewModel.selectMusicSongBeanList
+    }
+
+    lateinit var songBaseRvAdapter: BaseRvAdapter<Song>
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
     ): View {
-        initEntryRv()
-        initMediaRv()
-        initClick()
-        initRefresh()
-        return binding.root
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun initRefresh() {
-        binding.musicRefresh.setOnClickListener(myOnMultiClickListener {
-            CoroutineScope(Dispatchers.IO).launch {
-                mainViewModel.isOnClickRefresh = true
-                mainViewModel.requestMusicSong(true)
+        mediaListDetailsIsShow = true
+        CoroutineScope(Dispatchers.IO).launch {
+            flow {
+                val bitmap = getAlbumPicture(selectMusicSongBeanList.musicList[0].data)
+                emit(bitmap)
+            }.catch {
+                emit(mainViewModel.defaultAvatar)
+            }.collect {
                 withContext(Dispatchers.Main) {
-                    showToast(requireContext(), "刷新成功")
+                    binding.image.setImageBitmap(it)
                 }
             }
-        })
-
-    }
-
-    /**
-     * 初始化点击事件
-     */
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun initClick() {
-        binding.contentPlay.setOnClickListener(myOnMultiClickListener {
-            if (mainViewModel.musicSongList.value!!.size > 0) {
-                val song = mainViewModel.musicSongList.value!![0]
-                mainViewModel.sharedPreferencesEditCommitData {
-                    putString(SELECT_SONG_PATH, song.data)
-                    putString(SONG_PLAY_LIST_STRING, gson.toJson(GsonSongBean(mainViewModel.musicSongList.value!!)))
-                }
-                songBaseRvAdapter.index = 0
-                mainViewModel.musicPlaySongList.value = mainViewModel.musicSongList.value
-                if(!mMainActivity.audioBinder.mediaIsPlaying()){
-                    mMainActivity.playMusic()
-                }
+        }
+        binding.mediaTitle.text = selectMusicSongBeanList.musicList[0].album
+        binding.mediaText.text = "${selectMusicSongBeanList.musicList.size} 首歌曲"
+        songBaseRvAdapter = BaseRvAdapter(selectMusicSongBeanList.musicList, R.layout.item_song_layout) { itemData, view, position ->
+            val itemSongLayoutBinding = ItemSongLayoutBinding.bind(view)
+            itemSongLayoutBinding.musicTitle.text = itemData.name
+            itemSongLayoutBinding.musicAuthor.text = itemData.artist
+            //设置Bitmap
+            setImageBitmap(itemData, itemSongLayoutBinding, position)
+            //设置选中的背景颜色
+            if (index == position) {
+                val typedValue = TypedValue()
+                requireContext().theme.resolveAttribute(
+                    androidx.appcompat.R.attr.colorAccent, typedValue, true
+                )
+                itemSongLayoutBinding.musicCard.setCardBackgroundColor(typedValue.data)
+            } else {
+                itemSongLayoutBinding.musicCard.setCardBackgroundColor(
+                    resources.getColor(
+                        R.color.background_color
+                    )
+                )
             }
-        })
-    }
 
-    /**
-     * 设置入口
-     */
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun initEntryRv() {
-        val mutableListOf = mutableListOf<IconTextBean>()
-        mutableListOf += IconTextBean(R.drawable.icon_play_list, "歌单")
-        mutableListOf += IconTextBean(R.drawable.icon_music_library, "专辑")
-        mutableListOf += IconTextBean(R.drawable.people_black_24dp, "艺术家")
-        binding.contentEntryRv.adapter = BaseRvAdapter(
-            mutableListOf, R.layout.item_home_entry_layout
-        ) { itemData, view, position ->
-            val itemHomeEntryLayoutBinding = ItemHomeEntryLayoutBinding.bind(view)
-            itemHomeEntryLayoutBinding.itemHomeEntryIcon.setImageResource(itemData.icon)
-            itemHomeEntryLayoutBinding.itemHomeEntryText.text = itemData.text
-            itemHomeEntryLayoutBinding.itemHomeEntryCard.setOnClickListener(myOnMultiClickListener {
-                when (position) {
-                    0 -> mMainActivity.startPLayListFragment()
-                    1 -> mMainActivity.startTheAlbumFragment()
-                    2 -> mMainActivity.startArtistFragment()
+            //Item点击事件
+            itemSongLayoutBinding.root.setOnClickListener(myOnMultiClickListener {
+                if (fileExists(itemData.data)) {
+                    if (index != position) {
+                        // 判断当前选中的歌曲是否在播放列表中，存在则跳过，不存在则添加
+                        if ((mainViewModel.musicPlaySongList.value?.contains(
+                                itemData
+                            ) == false)
+                        ) {
+                            val currentPosition =
+                                mMainActivity.audioBinder.getCurrentMediaItemIndex()
+                            if (currentPosition + 1 == mainViewModel.musicPlaySongList.value!!.size) {
+                                mMainActivity.audioBinder.addMediaItem(
+                                    MediaItem.fromUri(
+                                        itemData.data
+                                    )
+                                )
+                                mainViewModel.musicPlaySongList.value!!.add(
+                                    itemData
+                                )
+                            } else {
+                                mMainActivity.audioBinder.addMediaItem(
+                                    MediaItem.fromUri(
+                                        itemData.data
+                                    ), currentPosition + 1
+                                )
+                                mainViewModel.musicPlaySongList.value!!.add(
+                                    currentPosition + 1, itemData
+                                )
+                            }
+                            mainViewModel.sharedPreferencesEditCommitData {
+                                putString(
+                                    SONG_PLAY_LIST_STRING,
+                                    gson.toJson(GsonSongBean(mainViewModel.musicPlaySongList.value!!))
+                                )
+                            }
+                        }
+                        isClickOnTheNextSong = true
+                        index = position
+                        HomeFragment.songBaseRvAdapter.index =
+                            mainViewModel.selectIndex(itemData.data)
+                        // 开启动画效果
+                        if (!isNotFirstEntry) isNotFirstEntry = true
+                    }
+                } else {
+                    showToast(requireContext(), "找不到此文件,可能文件已经被迁移或被删除")
                 }
             })
         }
-    }
 
-
-    /**
-     * 初始化媒体库
-     */
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun initMediaRv() {
-        // 取消过渡动画
-        (binding.contentRv.itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
-        binding.contentRv.itemAnimator = null
-        mainViewModel.musicSongList.observe(this) { songList ->
-            binding.mediaText.text = "${songList.size} 首歌曲"
-            songBaseRvAdapter =
-                BaseRvAdapter(songList, R.layout.item_song_layout) { itemData, view, position ->
-                    val itemSongLayoutBinding = ItemSongLayoutBinding.bind(view)
-                    itemSongLayoutBinding.musicTitle.text = itemData.name
-                    itemSongLayoutBinding.musicAuthor.text = itemData.artist
-                    //设置Bitmap
-                    setImageBitmap(itemData, itemSongLayoutBinding, position)
-                    //设置选中的背景颜色
-                    if (index == position) {
-                        val typedValue = TypedValue()
-                        requireContext().theme.resolveAttribute(
-                            androidx.appcompat.R.attr.colorAccent, typedValue, true
-                        )
-                        itemSongLayoutBinding.musicCard.setCardBackgroundColor(typedValue.data)
-                    } else {
-                        itemSongLayoutBinding.musicCard.setCardBackgroundColor(
-                            resources.getColor(
-                                color.background_color
-                            )
-                        )
-                    }
-
-                    //Item点击事件
-                    itemSongLayoutBinding.root.setOnClickListener(myOnMultiClickListener {
-                        if (fileExists(itemData.data)) {
-                            if (index != position) {
-                                // 判断当前选中的歌曲是否在播放列表中，存在则跳过，不存在则添加
-                                if ((mainViewModel.musicPlaySongList.value?.contains(
-                                        itemData
-                                    ) == false)
-                                ) {
-                                    val currentPosition =
-                                        mMainActivity.audioBinder.getCurrentMediaItemIndex()
-                                    if (currentPosition + 1 == mainViewModel.musicPlaySongList.value!!.size) {
-                                        mMainActivity.audioBinder.addMediaItem(
-                                            MediaItem.fromUri(
-                                                itemData.data
-                                            )
-                                        )
-                                        mainViewModel.musicPlaySongList.value!!.add(
-                                            itemData
-                                        )
-                                    } else {
-                                        mMainActivity.audioBinder.addMediaItem(
-                                            MediaItem.fromUri(
-                                                itemData.data
-                                            ), currentPosition + 1
-                                        )
-                                        mainViewModel.musicPlaySongList.value!!.add(
-                                            currentPosition + 1, itemData
-                                        )
-                                    }
-                                    mainViewModel.sharedPreferencesEditCommitData {
-                                        putString(
-                                            SONG_PLAY_LIST_STRING,
-                                            gson.toJson(GsonSongBean(mainViewModel.musicPlaySongList.value!!))
-                                        )
-                                    }
-                                }
-                                isClickOnTheNextSong = true
-                                index = position
-                                // 开启动画效果
-                                if (!isNotFirstEntry) isNotFirstEntry = true
-                            }
-                        } else {
-                            showToast(requireContext(), "找不到此文件,可能文件已经被迁移或被删除")
-                        }
-                    })
-
-                }
-
-            val selectSongPath = mainViewModel.getSelectSongPath()
-            songBaseRvAdapter.index = mainViewModel.selectIndex(selectSongPath)
-            mMainActivity.audioBinder.seekIndexNotPlayer(
-                mainViewModel.selectIndexMusicPlay(
-                    selectSongPath
-                )
-            )
-            val linearLayoutManager = LinearLayoutManager(requireContext())
-            binding.contentRv.layoutManager = linearLayoutManager
-            binding.contentRv.adapter = songBaseRvAdapter
-            mMainActivity.setEndOfSongListener {
-                isTheNextSongClick = true
-                songBaseRvAdapter.index = it
-            }
-            mMainActivity.setPlayListDialogF { path ->
-                songBaseRvAdapter.index = mainViewModel.selectIndex(path)
-            }
-
-            mMainActivity.setSeekToNextOnClickListener { selectPosition ->
-                songBaseRvAdapter.index = selectPosition
-            }
-
-            mMainActivity.setSeekToPreviousOnClickListener { selectPosition ->
-                songBaseRvAdapter.index = selectPosition
+        binding.mediaListRv.adapter = songBaseRvAdapter
+        songBaseRvAdapter.index = 9999
+        mainViewModel.selectMusicSongBeanList.musicList.forEachIndexed { index, song ->
+            if(mainViewModel.getSelectSongPath() == song.data){
+                songBaseRvAdapter.index = index
             }
         }
+
+        binding.mediaListPlay.setOnClickListener(myOnMultiClickListener {
+            if (mainViewModel.selectMusicSongBeanList.musicList.size > 0) {
+                val song = mainViewModel.selectMusicSongBeanList.musicList[0]
+                mainViewModel.sharedPreferencesEditCommitData {
+                    putString(SELECT_SONG_PATH, song.data)
+                    putString(SONG_PLAY_LIST_STRING, gson.toJson(mainViewModel.selectMusicSongBeanList))
+                }
+                mainViewModel.musicPlaySongList.value =
+                    mainViewModel.selectMusicSongBeanList.musicList
+                songBaseRvAdapter.index = 0
+                HomeFragment.songBaseRvAdapter.index = mainViewModel.selectIndex(song.data)
+                mMainActivity.playMusic()
+            }
+        })
+        return binding.root
     }
 
-    /**
-     * 设置Bitmap
-     */
     @RequiresApi(Build.VERSION_CODES.O)
     private fun BaseRvAdapter<Song>.setImageBitmap(
         oneitemData: Song, itemSongLayoutBinding: ItemSongLayoutBinding, position: Int
@@ -421,6 +374,5 @@ class HomeFragment : BaseFragment() {
             )
         }
     }
-
 
 }

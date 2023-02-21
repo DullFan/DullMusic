@@ -83,7 +83,15 @@ class MainViewModel(private val application: Application) : AndroidViewModel(app
      */
     var playListSongNumberString = MutableLiveData<String>()
 
-    lateinit var audioBinder: ExoPlayerService.AudioBinder
+    /**
+     * 专辑列表数据
+     */
+    var theAlbumMediaList = mutableListOf<GsonSongBean>()
+
+    /**
+     * 艺术家列表
+     */
+    var artistMediaList = mutableListOf<GsonSongBean>()
 
     private val sharedPreferences: SharedPreferences by lazy {
         application.getSharedPreferences("data", AppCompatActivity.MODE_PRIVATE)

@@ -6,7 +6,6 @@ import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
 import android.util.TypedValue
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -38,8 +37,12 @@ import kotlinx.coroutines.withContext
 var firstTimeDoesNotStart = false
 var firstTimeDoesNotStartBitmap = false
 
+/**
+ * 歌单详情页
+ */
 @RequiresApi(Build.VERSION_CODES.O)
 class SongListDetailsFragment : BaseFragment() {
+
     val binding by lazy {
         FragmentSongListDetailsBinding.inflate(layoutInflater)
     }
@@ -76,6 +79,7 @@ class SongListDetailsFragment : BaseFragment() {
                 val song = mainViewModel.selectMusicSongBeanList.musicList[0]
                 mainViewModel.sharedPreferencesEditCommitData {
                     putString(SELECT_SONG_PATH, song.data)
+                    putString(SONG_PLAY_LIST_STRING, gson.toJson(mainViewModel.selectMusicSongBeanList))
                 }
                 mainViewModel.musicPlaySongList.value =
                     mainViewModel.selectMusicSongBeanList.musicList
@@ -114,6 +118,7 @@ class SongListDetailsFragment : BaseFragment() {
             }
             delDialog.show()
         })
+
 
         initMediaRv()
         return binding.root
@@ -169,9 +174,9 @@ class SongListDetailsFragment : BaseFragment() {
                                     ) == false)
                                 ) {
                                     val currentPosition =
-                                        mainViewModel.audioBinder.getCurrentMediaItemIndex()
+                                        mMainActivity.audioBinder.getCurrentMediaItemIndex()
                                     if (currentPosition + 1 == mainViewModel.musicPlaySongList.value!!.size) {
-                                        mainViewModel.audioBinder.addMediaItem(
+                                        mMainActivity.audioBinder.addMediaItem(
                                             MediaItem.fromUri(
                                                 itemData.data
                                             )
@@ -180,7 +185,7 @@ class SongListDetailsFragment : BaseFragment() {
                                             itemData
                                         )
                                     } else {
-                                        mainViewModel.audioBinder.addMediaItem(
+                                        mMainActivity.audioBinder.addMediaItem(
                                             MediaItem.fromUri(
                                                 itemData.data
                                             ), currentPosition + 1
@@ -237,7 +242,6 @@ class SongListDetailsFragment : BaseFragment() {
             })
             itemTouchHelper.attachToRecyclerView(binding.mediaListRv)
         }
-
     }
 
     /**

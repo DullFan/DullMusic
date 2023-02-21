@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_marginBottom="10dp"
+    android:layout_width="match_parent"
+    android:layout_marginHorizontal="10dp"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <androidx.constraintlayout.utils.widget.ImageFilterView
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:translationZ="5dp"
+        app:round="20dp"
+        android:id="@+id/image"
+        android:scaleType="centerCrop"
+        android:src="@drawable/default_avatar"/>
+
+    <TextView
+        android:id="@+id/title"
+        android:text="运气来的"
+        android:layout_marginTop="3dp"
+        android:textColor="@color/black"
+        android:textSize="17dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:id="@+id/number"
+        android:text="运气来的"
+        android:layout_marginTop="3dp"
+        android:textSize="12dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+</LinearLayout>

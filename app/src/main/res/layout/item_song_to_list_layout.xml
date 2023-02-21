@@ -54,4 +54,5 @@
             app:layout_constraintTop_toTopOf="@id/music_photos" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
+
 </androidx.cardview.widget.CardView>
