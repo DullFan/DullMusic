@@ -77,7 +77,6 @@ class PlayListFragment : BaseFragment() {
                 R.layout.item_song_list_layout
             ) { itemData, view, position ->
                 val itemSongListLayoutBinding = ItemSongListLayoutBinding.bind(view)
-                showLog("数据")
                 CoroutineScope(Dispatchers.IO).launch {
                     val bitmap = if (itemData.musicList.size == 0) {
                         mMainActivity.mainViewModel.defaultAvatar

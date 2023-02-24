@@ -1,6 +1,7 @@
 package com.example.dullmusic
 
 import android.app.Application
+import com.example.base.utils.showLog
 import com.microsoft.appcenter.AppCenter
 import com.microsoft.appcenter.analytics.Analytics
 import com.microsoft.appcenter.crashes.Crashes

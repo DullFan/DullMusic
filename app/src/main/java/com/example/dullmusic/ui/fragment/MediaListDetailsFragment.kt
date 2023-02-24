@@ -188,8 +188,7 @@ class MediaListDetailsFragment : BaseFragment() {
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             flow {
-                val bitmap = getAlbumPicture(oneitemData.data)
-                emit(bitmap)
+                emit(mainViewModel.musicSongListBitmap[oneitemData.data])
             }.catch {
                 emit(mainViewModel.defaultAvatar)
             }.collect {

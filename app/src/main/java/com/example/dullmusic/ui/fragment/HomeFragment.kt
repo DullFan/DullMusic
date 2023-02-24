@@ -80,11 +80,14 @@ class HomeFragment : BaseFragment() {
                 val song = mainViewModel.musicSongList.value!![0]
                 mainViewModel.sharedPreferencesEditCommitData {
                     putString(SELECT_SONG_PATH, song.data)
-                    putString(SONG_PLAY_LIST_STRING, gson.toJson(GsonSongBean(mainViewModel.musicSongList.value!!)))
+                    putString(
+                        SONG_PLAY_LIST_STRING,
+                        gson.toJson(GsonSongBean(mainViewModel.musicSongList.value!!))
+                    )
                 }
                 songBaseRvAdapter.index = 0
                 mainViewModel.musicPlaySongList.value = mainViewModel.musicSongList.value
-                if(!mMainActivity.audioBinder.mediaIsPlaying()){
+                if (!mMainActivity.audioBinder.mediaIsPlaying()) {
                     mMainActivity.playMusic()
                 }
             }
@@ -132,9 +135,9 @@ class HomeFragment : BaseFragment() {
                     val itemSongLayoutBinding = ItemSongLayoutBinding.bind(view)
                     itemSongLayoutBinding.musicTitle.text = itemData.name
                     itemSongLayoutBinding.musicAuthor.text = itemData.artist
-                    //设置Bitmap
+                    // 设置Bitmap
                     setImageBitmap(itemData, itemSongLayoutBinding, position)
-                    //设置选中的背景颜色
+                    // 设置选中的背景颜色
                     if (index == position) {
                         val typedValue = TypedValue()
                         requireContext().theme.resolveAttribute(
@@ -195,7 +198,6 @@ class HomeFragment : BaseFragment() {
                             showToast(requireContext(), "找不到此文件,可能文件已经被迁移或被删除")
                         }
                     })
-
                 }
 
             val selectSongPath = mainViewModel.getSelectSongPath()
@@ -235,15 +237,22 @@ class HomeFragment : BaseFragment() {
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             flow {
-                val bitmap = getAlbumPicture(oneitemData.data)
+                val bitmap = if (mainViewModel.musicSongListBitmap.containsKey(oneitemData.data)) {
+                    showLog("初始化")
+                    mainViewModel.musicSongListBitmap[oneitemData.data]
+                } else {
+                    showLog("获取旧都Bitmap")
+                    getAlbumPicture(oneitemData.data)
+                }
                 emit(bitmap)
             }.catch {
                 emit(mainViewModel.defaultAvatar)
             }.collect {
                 withContext(Dispatchers.Main) {
+                    mainViewModel.musicSongListBitmap[oneitemData.data] = it!!
                     itemSongLayoutBinding.musicPhotos.setImageBitmap(it)
                     if (index == position) {
-                        mainViewModel.setSelectBitmap(it ?: mainViewModel.defaultAvatar)
+                        mainViewModel.setSelectBitmap(it)
                     }
                     itemSongLayoutBinding.itemMusicMenu.setOnClickListener(myOnMultiClickListener {
                         val dialog = AlertDialog.Builder(requireContext()).create()
@@ -255,8 +264,7 @@ class HomeFragment : BaseFragment() {
 
                         dialogView.musicTitle.text = oneitemData.name
                         dialogView.musicAuthor.text = oneitemData.artist
-                        dialogView.musicPhotos.setImageBitmap(it)
-
+                        dialogView.musicPhotos.setImageBitmap(mainViewModel.musicSongListBitmap[oneitemData.data])
                         dialogView.musicAddPlaySong.setOnClickListener(myOnMultiClickListener {
                             val addSongListDialog = AlertDialog.Builder(requireContext()).create()
                             val dialogAddSongToListLayoutBinding =
@@ -397,7 +405,6 @@ class HomeFragment : BaseFragment() {
                 }
             }
         }
-
         if (index == position) {
             mainViewModel.sharedPreferencesEditCommitData {
                 putString(SELECT_SONG_PATH, oneitemData.data)
@@ -421,6 +428,4 @@ class HomeFragment : BaseFragment() {
             )
         }
     }
-
-
 }

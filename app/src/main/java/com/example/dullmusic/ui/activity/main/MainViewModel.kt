@@ -35,6 +35,11 @@ class MainViewModel(private val application: Application) : AndroidViewModel(app
     var musicPlaySongList = MutableLiveData<MutableList<Song>>()
 
     /**
+     * 播放列表
+     */
+    var musicSongListBitmap = HashMap<String,Bitmap>()
+
+    /**
      * 选中的列表
      */
     var selectMusicSongBeanList:GsonSongBean = GsonSongBean(mutableListOf(),"")

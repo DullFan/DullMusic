@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+  <!--线-->
+  <path
+      android:name="line"
+      android:fillColor="#171819"
+      android:pathData="M15,33
+                          L15,15
+                          Q15,12 18,12
+                          L18,12
+                          Q21,12 21,15
+                          L21,33
+                          Q21,36 18,36
+                          L18,36
+                          Q15,36 15,33
+
+                          M27,33
+                          L27,15
+                          Q27,12 30,12
+                          L30,12
+                          Q33,12 33,15
+                          L33,33
+                          Q33,36 30,36
+                          L30,36
+                          Q27,36 27,33
+                    " />
+</vector>

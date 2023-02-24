@@ -64,8 +64,7 @@ class TheAlbumFragment : BaseFragment() {
             val itemTheAlbumListLayoutBinding  =ItemTheAlbumListLayoutBinding.bind(view)
             CoroutineScope(Dispatchers.IO).launch {
                 flow {
-                    val bitmap = getAlbumPicture(itemData.musicList[0].data)
-                    emit(bitmap)
+                    emit(mMainViewModel.musicSongListBitmap[itemData.musicList[0].data])
                 }.catch {
                     emit(mMainViewModel.defaultAvatar)
                 }.collect {
