@@ -14,24 +14,17 @@ import android.media.AudioManager
 import android.os.*
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.TypedValue
 import android.view.View
 import android.widget.SeekBar
-import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.WindowCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.SimpleItemAnimator
-import androidx.test.services.events.platform.TestRunErrorEvent
 import com.example.base.base.BaseActivity
-import com.example.base.base.BaseRvAdapter
 import com.example.base.base.BaseRvAdapterPosition
 import com.example.base.utils.*
 import com.example.dullmusic.R
@@ -47,15 +40,10 @@ import com.example.dullmusic.ui.activity.SettingActivity
 import com.example.dullmusic.ui.fragment.*
 import com.example.media.ExoPlayerManager
 import com.example.media.ExoPlayerService
-import com.example.media.MediaNotification
 import com.example.media.MyBroadcastReceiverListener
-import com.example.media.SeekToCallBack
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flow
 
 const val MIN_OUT_LAYOUT_TIME = 1000
 var lastOutLayoutTime = 0L
@@ -204,7 +192,6 @@ open class MainActivity : BaseActivity() {
      */
     private fun clickBottomSheetDialog() {
         binding.musicList.setOnClickListener(myOnMultiClickListener {
-            showToast(this, "1")
             if (mainViewModel.musicPlaySongList.value?.size != 0) {
                 val dialogPlayListLayoutBinding =
                     DialogPlayListLayoutBinding.inflate(layoutInflater)
@@ -594,19 +581,21 @@ open class MainActivity : BaseActivity() {
 
     private fun renewNotification() {
         isClickOnTheNextSong = false
-        val song =
-            mainViewModel.musicPlaySongList.value?.get(audioBinder.getCurrentMediaItemIndex())
-        audioBinder.buildNotification(
-            binding.musicPlayPause.tag == "play",
-            audioBinder.getCurrentPosition(),
-            song!!.name,
-            song.artist,
-            song.album,
-            song.duration.toLong(),
-            mainViewModel.musicSongListBitmap[song.data]!!
-        )
-        mainViewModel.sharedPreferencesEditCommitData {
-            putString(SELECT_SONG_PATH,song.data)
+        if (mainViewModel.musicPlaySongList.value?.size != 0) {
+            val song =
+                mainViewModel.musicPlaySongList.value?.get(audioBinder.getCurrentMediaItemIndex())
+            audioBinder.buildNotification(
+                binding.musicPlayPause.tag == "play",
+                audioBinder.getCurrentPosition(),
+                song!!.name,
+                song.artist,
+                song.album,
+                song.duration.toLong(),
+                mainViewModel.musicSongListBitmap[song.data]!!
+            )
+            mainViewModel.sharedPreferencesEditCommitData {
+                putString(SELECT_SONG_PATH, song.data)
+            }
         }
     }
 
@@ -660,7 +649,14 @@ open class MainActivity : BaseActivity() {
      * 跳转Home
      */
     private fun startHomeFragment() {
-        replaceFragment(binding.contentFragment.id, HomeFragment())
+        replaceFragment(
+            binding.contentFragment.id,
+            HomeFragment(),
+            R.anim.nav_default_enter_anim,
+            R.anim.nav_default_exit_anim,
+            R.anim.nav_default_pop_enter_anim,
+            R.anim.nav_default_pop_exit_anim
+        )
     }
 
     /**
@@ -669,7 +665,13 @@ open class MainActivity : BaseActivity() {
     fun startSongListDetailsFragment() {
         binding.motionLayout.visibility = View.INVISIBLE
         binding.otherPagesFragment.visibility = View.VISIBLE
-        addFragment(binding.otherPagesFragment.id, SongListDetailsFragment())
+        addFragment(
+            binding.otherPagesFragment.id, SongListDetailsFragment(),
+            R.anim.nav_default_enter_anim,
+            R.anim.nav_default_exit_anim,
+            R.anim.nav_default_pop_enter_anim,
+            R.anim.nav_default_pop_exit_anim
+        )
     }
 
     /**
@@ -678,7 +680,13 @@ open class MainActivity : BaseActivity() {
     fun startMediaListDetailsFragment() {
         binding.motionLayout.visibility = View.INVISIBLE
         binding.otherPagesFragment.visibility = View.VISIBLE
-        addFragment(binding.otherPagesFragment.id, MediaListDetailsFragment())
+        addFragment(
+            binding.otherPagesFragment.id, MediaListDetailsFragment(),
+            R.anim.nav_default_enter_anim,
+            R.anim.nav_default_exit_anim,
+            R.anim.nav_default_pop_enter_anim,
+            R.anim.nav_default_pop_exit_anim
+        )
     }
 
 
@@ -688,7 +696,13 @@ open class MainActivity : BaseActivity() {
     private fun startLrcFragment() {
         binding.motionLayout.visibility = View.INVISIBLE
         binding.fragment.visibility = View.VISIBLE
-        replaceFragment(binding.fragment.id, LrcFragment())
+        replaceFragment(
+            binding.fragment.id, LrcFragment(),
+            R.anim.nav_default_enter_anim,
+            R.anim.nav_default_exit_anim,
+            R.anim.nav_default_pop_enter_anim,
+            R.anim.nav_default_pop_exit_anim
+        )
     }
 
     /**
@@ -697,7 +711,13 @@ open class MainActivity : BaseActivity() {
     fun startPLayListFragment() {
         binding.motionLayout.visibility = View.INVISIBLE
         binding.otherPagesFragment.visibility = View.VISIBLE
-        addFragment(binding.otherPagesFragment.id, PlayListFragment())
+        addFragment(
+            binding.otherPagesFragment.id, PlayListFragment(),
+            R.anim.nav_default_enter_anim,
+            R.anim.nav_default_exit_anim,
+            R.anim.nav_default_pop_enter_anim,
+            R.anim.nav_default_pop_exit_anim
+        )
     }
 
     /**
@@ -706,7 +726,11 @@ open class MainActivity : BaseActivity() {
     fun startArtistFragment() {
         binding.motionLayout.visibility = View.INVISIBLE
         binding.otherPagesFragment.visibility = View.VISIBLE
-        addFragment(binding.otherPagesFragment.id, ArtistFragment())
+        addFragment(binding.otherPagesFragment.id, ArtistFragment(),
+            R.anim.nav_default_enter_anim,
+            R.anim.nav_default_exit_anim,
+            R.anim.nav_default_pop_enter_anim,
+            R.anim.nav_default_pop_exit_anim)
     }
 
     /**
@@ -715,7 +739,11 @@ open class MainActivity : BaseActivity() {
     fun startTheAlbumFragment() {
         binding.motionLayout.visibility = View.INVISIBLE
         binding.otherPagesFragment.visibility = View.VISIBLE
-        addFragment(binding.otherPagesFragment.id, TheAlbumFragment())
+        addFragment(binding.otherPagesFragment.id, TheAlbumFragment(),
+            R.anim.nav_default_enter_anim,
+            R.anim.nav_default_exit_anim,
+            R.anim.nav_default_pop_enter_anim,
+            R.anim.nav_default_pop_exit_anim)
     }
 
     /**

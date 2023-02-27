@@ -8,6 +8,7 @@ import android.os.PersistableBundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.fragment.app.Fragment
+import com.example.base.R
 import com.google.android.material.snackbar.Snackbar
 import com.microsoft.appcenter.AppCenter
 import com.microsoft.appcenter.analytics.Analytics
@@ -37,25 +38,25 @@ open class BaseActivity : AppCompatActivity() {
         Snackbar.make(window.decorView, "$content",Snackbar.LENGTH_LONG).show()
     }
 
-    fun replaceFragment(viewId:Int,fragment:Fragment){
+    fun replaceFragment(viewId:Int,fragment:Fragment,anim01:Int,anim02:Int,anim03:Int,anim04:Int){
         supportFragmentManager.beginTransaction()
             .setCustomAnimations(
-                androidx.navigation.ui.R.anim.nav_default_enter_anim,
-                androidx.navigation.ui.R.anim.nav_default_exit_anim,
-                androidx.navigation.ui.R.anim.nav_default_pop_enter_anim,
-                androidx.navigation.ui.R.anim.nav_default_pop_exit_anim
+                anim01,
+                anim02,
+                anim03,
+                anim04
             )
             .replace(viewId, fragment)
             .commit()
     }
 
-    fun addFragment(viewId:Int,fragment:Fragment){
+    fun addFragment(viewId:Int,fragment:Fragment,anim01:Int,anim02:Int,anim03:Int,anim04:Int){
         supportFragmentManager.beginTransaction()
             .setCustomAnimations(
-                androidx.navigation.ui.R.anim.nav_default_enter_anim,
-                androidx.navigation.ui.R.anim.nav_default_exit_anim,
-                androidx.navigation.ui.R.anim.nav_default_pop_enter_anim,
-                androidx.navigation.ui.R.anim.nav_default_pop_exit_anim
+                anim01,
+                anim02,
+                anim03,
+                anim04
             )
             .add(viewId, fragment)
             .addToBackStack("")

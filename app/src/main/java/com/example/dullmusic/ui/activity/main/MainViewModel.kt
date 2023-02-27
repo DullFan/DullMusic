@@ -9,7 +9,6 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import com.example.base.utils.gson
-import com.example.base.utils.showLog
 import com.example.dullmusic.R
 import com.example.dullmusic.bean.GsonSongBean
 import com.example.dullmusic.bean.SelectSongBean
@@ -19,7 +18,6 @@ import com.example.dullmusic.tool.ALL_SONG_PLAY_LIST_STRING
 import com.example.dullmusic.tool.MUSIC_LIST_STRING
 import com.example.dullmusic.tool.SELECT_SONG_PATH
 import com.example.dullmusic.tool.SONG_PLAY_LIST_STRING
-import com.example.media.ExoPlayerService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

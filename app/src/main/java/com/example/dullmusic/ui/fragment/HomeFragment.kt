@@ -238,10 +238,8 @@ class HomeFragment : BaseFragment() {
         CoroutineScope(Dispatchers.IO).launch {
             flow {
                 val bitmap = if (mainViewModel.musicSongListBitmap.containsKey(oneitemData.data)) {
-                    showLog("初始化")
                     mainViewModel.musicSongListBitmap[oneitemData.data]
                 } else {
-                    showLog("获取旧都Bitmap")
                     getAlbumPicture(oneitemData.data)
                 }
                 emit(bitmap)
@@ -249,10 +247,14 @@ class HomeFragment : BaseFragment() {
                 emit(mainViewModel.defaultAvatar)
             }.collect {
                 withContext(Dispatchers.Main) {
-                    mainViewModel.musicSongListBitmap[oneitemData.data] = it!!
-                    itemSongLayoutBinding.musicPhotos.setImageBitmap(it)
+                    try {
+                        mainViewModel.musicSongListBitmap[oneitemData.data] = it!!
+                    } catch (e: Exception) {
+                        mainViewModel.musicSongListBitmap[oneitemData.data] = mainViewModel.defaultAvatar
+                    }
+                    itemSongLayoutBinding.musicPhotos.setImageBitmap(mainViewModel.musicSongListBitmap[oneitemData.data])
                     if (index == position) {
-                        mainViewModel.setSelectBitmap(it)
+                        mainViewModel.setSelectBitmap(mainViewModel.musicSongListBitmap[oneitemData.data]!!)
                     }
                     itemSongLayoutBinding.itemMusicMenu.setOnClickListener(myOnMultiClickListener {
                         val dialog = AlertDialog.Builder(requireContext()).create()

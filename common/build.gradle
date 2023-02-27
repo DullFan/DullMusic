@@ -12,11 +12,18 @@ android {
         targetSdk rootProject.targetSdk
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
+        resConfigs "zh-rCN", "en-rUS"
+        ndk {
+            abiFilters 'armeabi-v7a'
+        }
     }
-
+    lintOptions {
+        baseline file("lint-baseline.xml")
+    }
     buildTypes {
+
         release {
-            minifyEnabled false
+            minifyEnabled rootProject.isMinifyEnabled
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }

@@ -19,3 +19,11 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+-keep public class com.example.dullmusic.ui.activity.main.MainActivity {
+    public <init>();
+}
+
+-keep public class com.example.dullmusic.ui.activity.SettingActivity {
+    public <init>();
+}
+
