@@ -36,7 +36,6 @@ import com.example.dullmusic.databinding.*
 import com.example.dullmusic.lrc.parseLrcFile
 import com.example.dullmusic.lrc.parseStr2List
 import com.example.dullmusic.tool.*
-import com.example.dullmusic.ui.activity.SettingActivity
 import com.example.dullmusic.ui.fragment.*
 import com.example.media.ExoPlayerManager
 import com.example.media.ExoPlayerService
@@ -752,7 +751,6 @@ open class MainActivity : BaseActivity() {
     private fun startSetting() {
         binding.musicMenu.setOnClickListener(myOnMultiClickListener {
             if (motionLayoutIsExpand) {
-                startA(SettingActivity::class.java)
                 overridePendingTransition(
                     R.anim.slide_in_bottom, R.anim.slide_out_top
                 )
