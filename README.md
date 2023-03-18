@@ -1,8 +1,8 @@
 # 音乐
 
-一个听音乐的Android应用   
+一个听本地音乐的Android应用   
 
-[下载链接](https://install.appcenter.ms/users/DullFan/apps/DullMusic)
+[下载链接](https://www.pgyer.com/5vN0)
 
 # 未来展望
 

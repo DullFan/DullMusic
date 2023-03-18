@@ -128,7 +128,7 @@ class HomeFragment : BaseFragment() {
         // 取消过渡动画
         (binding.contentRv.itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
         binding.contentRv.itemAnimator = null
-        mainViewModel.musicSongList.observe(this) { songList ->
+        mainViewModel.musicSongList.observe(viewLifecycleOwner) { songList ->
             binding.mediaText.text = "${songList.size} 首歌曲"
             songBaseRvAdapter =
                 BaseRvAdapter(songList, R.layout.item_song_layout) { itemData, view, position ->
