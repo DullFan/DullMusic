@@ -15,9 +15,11 @@ import android.os.*
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
+import android.view.ViewGroup
 import android.widget.SeekBar
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.asynclayoutinflater.view.AsyncLayoutInflater
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
@@ -71,14 +73,26 @@ open class MainActivity : BaseActivity() {
      */
     val registerForActivityResult =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-            if (it[Manifest.permission.READ_EXTERNAL_STORAGE]!! && it[Manifest.permission.WRITE_EXTERNAL_STORAGE]!!) {
-                requestData()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (it[Manifest.permission.READ_MEDIA_AUDIO]!!) {
+                    requestData()
+                }
+            } else {
+                if (it[Manifest.permission.READ_EXTERNAL_STORAGE]!! && it[Manifest.permission.WRITE_EXTERNAL_STORAGE]!!) {
+                    requestData()
+                }
             }
         }
 
-    private val permissions = arrayOf(
-        Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE
-    )
+    private val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        arrayOf(
+            Manifest.permission.READ_MEDIA_AUDIO
+        )
+    } else {
+        arrayOf(
+            Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE
+        )
+    }
 
     lateinit var mainLrcEndOfSong: MainLrcEndOfSong
     lateinit var mainLrcHandler: MainLrcHandler
@@ -500,18 +514,22 @@ open class MainActivity : BaseActivity() {
     }
 
     private fun nextMusic(action: (selectPosition: Int) -> Unit) {
-        if (!isNotFirstEntry) isNotFirstEntry = true
-        isTheNextSongClick = true
-        val selectSongPath = mainViewModel.getSelectSongPath()
-        val selectIndex = mainViewModel.selectIndexMusicPlay(selectSongPath)
-        val songMutableList = mainViewModel.musicPlaySongList.value
-        val data = if (selectIndex + 1 == songMutableList!!.size) {
-            songMutableList[0].data
-        } else {
-            songMutableList[selectIndex + 1].data
+        try {
+            if (!isNotFirstEntry) isNotFirstEntry = true
+            isTheNextSongClick = true
+            val selectSongPath = mainViewModel.getSelectSongPath()
+            val selectIndex = mainViewModel.selectIndexMusicPlay(selectSongPath)
+            val songMutableList = mainViewModel.musicPlaySongList.value
+            val data = if (selectIndex + 1 == songMutableList!!.size) {
+                songMutableList[0].data
+            } else {
+                songMutableList[selectIndex + 1].data
+            }
+            action.invoke(mainViewModel.selectIndex(data))
+            audioBinder.seekToNext()
+        } catch (e: Exception) {
+            showToast(this, "当前没有歌曲哦!")
         }
-        action.invoke(mainViewModel.selectIndex(data))
-        audioBinder.seekToNext()
     }
 
     fun setSeekToPreviousOnClickListener(action: (selectPosition: Int) -> Unit) {
@@ -521,18 +539,22 @@ open class MainActivity : BaseActivity() {
     }
 
     private fun previousMusic(action: (selectPosition: Int) -> Unit) {
-        if (!isNotFirstEntry) isNotFirstEntry = true
-        isTheNextSongClick = false
-        val selectSongPath = mainViewModel.getSelectSongPath()
-        val selectIndex = mainViewModel.selectIndexMusicPlay(selectSongPath)
-        val songMutableList = mainViewModel.musicPlaySongList.value
-        val data = if (selectIndex - 1 < 0) {
-            songMutableList!![songMutableList.size - 1].data
-        } else {
-            songMutableList!![selectIndex - 1].data
+        try {
+            if (!isNotFirstEntry) isNotFirstEntry = true
+            isTheNextSongClick = false
+            val selectSongPath = mainViewModel.getSelectSongPath()
+            val selectIndex = mainViewModel.selectIndexMusicPlay(selectSongPath)
+            val songMutableList = mainViewModel.musicPlaySongList.value
+            val data = if (selectIndex - 1 < 0) {
+                songMutableList!![songMutableList.size - 1].data
+            } else {
+                songMutableList!![selectIndex - 1].data
+            }
+            audioBinder.seekToPrevious()
+            action.invoke(mainViewModel.selectIndex(data))
+        } catch (e: Exception) {
+            showToast(this, "当前没有歌曲哦!")
         }
-        audioBinder.seekToPrevious()
-        action.invoke(mainViewModel.selectIndex(data))
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -725,11 +747,13 @@ open class MainActivity : BaseActivity() {
     fun startArtistFragment() {
         binding.motionLayout.visibility = View.INVISIBLE
         binding.otherPagesFragment.visibility = View.VISIBLE
-        addFragment(binding.otherPagesFragment.id, ArtistFragment(),
+        addFragment(
+            binding.otherPagesFragment.id, ArtistFragment(),
             R.anim.nav_default_enter_anim,
             R.anim.nav_default_exit_anim,
             R.anim.nav_default_pop_enter_anim,
-            R.anim.nav_default_pop_exit_anim)
+            R.anim.nav_default_pop_exit_anim
+        )
     }
 
     /**
@@ -738,11 +762,13 @@ open class MainActivity : BaseActivity() {
     fun startTheAlbumFragment() {
         binding.motionLayout.visibility = View.INVISIBLE
         binding.otherPagesFragment.visibility = View.VISIBLE
-        addFragment(binding.otherPagesFragment.id, TheAlbumFragment(),
+        addFragment(
+            binding.otherPagesFragment.id, TheAlbumFragment(),
             R.anim.nav_default_enter_anim,
             R.anim.nav_default_exit_anim,
             R.anim.nav_default_pop_enter_anim,
-            R.anim.nav_default_pop_exit_anim)
+            R.anim.nav_default_pop_exit_anim
+        )
     }
 
     /**

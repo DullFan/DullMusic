@@ -35,17 +35,6 @@
             app:layout_constraintTop_toTopOf="@+id/content_app_name"
             app:tint="@color/icon_back_color" />
 
-        <androidx.constraintlayout.utils.widget.ImageFilterView
-            android:id="@+id/music_setting"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:layout_marginEnd="20dp"
-            android:src="@drawable/icon_setting"
-            app:layout_constraintBottom_toBottomOf="@+id/content_app_name"
-            app:layout_constraintRight_toLeftOf="@+id/music_refresh"
-            app:layout_constraintTop_toTopOf="@+id/content_app_name"
-            app:tint="@color/icon_back_color" />
-
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/content_entry_rv"
             android:layout_width="match_parent"
@@ -83,29 +72,6 @@
             app:layout_constraintTop_toTopOf="@+id/media_text"
             app:tint="@color/icon_back_color" />
 
-        <androidx.constraintlayout.utils.widget.ImageFilterView
-            android:id="@+id/content_multiple_choice"
-            android:layout_width="21dp"
-            android:layout_marginEnd="20dp"
-            android:layout_height="21dp"
-            android:src="@drawable/icon_music_multiple_choice"
-            app:layout_constraintBottom_toBottomOf="@+id/media_text"
-            app:layout_constraintRight_toLeftOf="@+id/content_play"
-            app:layout_constraintTop_toTopOf="@+id/media_text"
-            app:tint="@color/icon_back_color" />
-
-
-        <androidx.constraintlayout.utils.widget.ImageFilterView
-            android:id="@+id/content_sort"
-            android:layout_width="21dp"
-            android:layout_height="21dp"
-            android:layout_marginEnd="20dp"
-            android:src="@drawable/icon_music_sort"
-            app:layout_constraintBottom_toBottomOf="@+id/media_text"
-            app:layout_constraintRight_toLeftOf="@+id/content_multiple_choice"
-            app:layout_constraintTop_toTopOf="@+id/media_text"
-            app:tint="@color/icon_back_color" />
-
         <View
             app:layout_constraintBottom_toTopOf="@id/media_text"
             android:background="@color/background_grey_color"
@@ -124,6 +90,7 @@
             android:id="@+id/content_rv"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:overScrollMode="never"
             android:layout_marginTop="20dp"
             android:paddingBottom="40dp"
             app:layout_constraintTop_toBottomOf="@+id/media_text" />

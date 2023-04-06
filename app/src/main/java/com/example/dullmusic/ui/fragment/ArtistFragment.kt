@@ -15,12 +15,10 @@ import com.example.dullmusic.R
 import com.example.dullmusic.bean.GsonSongBean
 import com.example.dullmusic.databinding.FragmentArtistBinding
 import com.example.dullmusic.databinding.ItemArtistLayoutBinding
-import com.example.dullmusic.databinding.ItemTheAlbumListLayoutBinding
 import com.example.dullmusic.ui.activity.main.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -37,7 +35,6 @@ class ArtistFragment : BaseFragment() {
     private val mMainViewModel by lazy {
         mMainActivity.mainViewModel
     }
-
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreateView(
