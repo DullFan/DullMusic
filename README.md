@@ -12,10 +12,6 @@
 - [x] 浏览歌单、专辑、艺术家
 - [x] 通知的播放队列
 
-# 反馈
-
-点击链接加入群聊【DullMusic】[147548357](https://jq.qq.com/?_wv=1027&k=QQgM70mV)
-
 # 截图
 
 | <img src="./screenshots/1.jpg" /> | <img src="./screenshots/2.jpg" />  | <img src="./screenshots/3.jpg"  /> |
